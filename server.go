@@ -129,7 +129,7 @@ func getRequest(w http.ResponseWriter) {
 	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
 	db, err := sql.Open("postgres", PSQLInfo)
 	if err != nil {
-		db.QueryRow(`create table "538" (id integer primary key , id_sensor integer, value_sensor float(2), time_add timestamp);insert into "538" VALUES (4,1, 22.9, to_timestamp('16-05-2011 15:36:38', 'dd-mm-yyyy hh24:mi:ss'))`)
+		panic(err)
 	}
 
 	defer func() {
@@ -142,7 +142,11 @@ func getRequest(w http.ResponseWriter) {
 	var idValue int
 	err = db.QueryRow(`SELECT MAX(id) FROM "538"`).Scan(&idValue)
 	if err != nil {
-		panic("Max value error")
+		db.QueryRow(`create table "538" (id integer primary key , id_sensor integer, value_sensor float(2), time_add timestamp);insert into "538" VALUES (4,1, 22.9, to_timestamp('16-05-2011 15:36:38', 'dd-mm-yyyy hh24:mi:ss'))`)
+		err = db.QueryRow(`SELECT MAX(id) FROM "538"`).Scan(&idValue)
+		if err != nil{
+			panic("That doesn't work")
+		}
 	}
 
 	var idSensor int
