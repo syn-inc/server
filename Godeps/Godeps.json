@@ -1,0 +1,17 @@
+{
+	"ImportPath": "server",
+	"GoVersion": "go1.12",
+	"GodepVersion": "v80",
+	"Deps": [
+		{
+			"ImportPath": "github.com/lib/pq",
+			"Comment": "v1.0.0-12-gd6156e1",
+			"Rev": "d6156e141ac6c06345c7c73f450987a9ed4b751f"
+		},
+		{
+			"ImportPath": "github.com/lib/pq/oid",
+			"Comment": "v1.0.0-12-gd6156e1",
+			"Rev": "d6156e141ac6c06345c7c73f450987a9ed4b751f"
+		}
+	]
+}
