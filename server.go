@@ -13,7 +13,11 @@ import (
 )
 
 var (
-	dbName = os.Getenv("DATABASE_URL")
+	host     = os.Getenv("HOST")
+	port     = 5432
+	user     = os.Getenv("USER")
+	password = os.Getenv("PASSWORD")
+	dbName   = os.Getenv("DATABASE")
 )
 
 func ServerBody(w http.ResponseWriter, r *http.Request) {
@@ -43,7 +47,8 @@ func main() {
 }
 
 func dbSet(idSens int, sensValue float64) {
-	db, err := sql.Open("postgres", dbName)
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
+	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
 	}
@@ -62,9 +67,11 @@ func dbSet(idSens int, sensValue float64) {
 	}
 
 	var idValue int
-	err = db.QueryRow(`SELECT MAX(id) FROM "538"`).Scan(&idValue)
+	sqlGetLastId := `SELECT MAX(id) FROM "538"`
+	responseLastId := db.QueryRow(sqlGetLastId)
+	err = responseLastId.Scan(&idValue)
 	if err != nil {
-		db.QueryRow(`CREATE TABLE "538" (id integer primary key , id_sensor integer, value_sensor float(2), time_add timestamp);INSERT INTO "538" VALUES (4,1, 22.9, to_timestamp('16-05-2011 15:36:38', 'dd-mm-yyyy hh24:mi:ss'))`)
+		panic(err)
 	}
 
 	sqlStatement := `INSERT INTO "538" (id, id_sensor, value_sensor, time_add) VALUES ($1, $2, $3, to_timestamp($4, 'yyyy-mm-dd hh24:mi:ss'))`
@@ -124,7 +131,8 @@ func IsSetOk(v url.Values) bool { //t *testing.T,
 }
 func getRequest(w http.ResponseWriter) {
 
-	db, err := sql.Open("postgres", dbName)
+	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
+	db, err := sql.Open("postgres", PSQLInfo)
 	if err != nil {
 		panic(err)
 	}
@@ -139,7 +147,7 @@ func getRequest(w http.ResponseWriter) {
 	var idValue int
 	err = db.QueryRow(`SELECT MAX(id) FROM "538"`).Scan(&idValue)
 	if err != nil {
-		db.QueryRow(`CREATE TABLE "538" (id integer primary key , id_sensor integer, value_sensor float(2), time_add timestamp);INSERT INTO "538" VALUES (4,1, 22.9, to_timestamp('16-05-2011 15:36:38', 'dd-mm-yyyy hh24:mi:ss'))`)
+		panic("Max value error")
 	}
 
 	var idSensor int
