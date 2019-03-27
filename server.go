@@ -27,9 +27,6 @@ func ServerBody(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Parse Error %s", err)
 	}
 
-	fmt.Println(r.Form)
-	fmt.Println("Path", r.URL.Path)
-	fmt.Println("Scheme", r.URL.Scheme)
 	ViewShow(w, "Hello World!")
 	if r.URL.Path == "/get" {
 		getRequest(w)
@@ -40,7 +37,7 @@ func ServerBody(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/", ServerBody)
-	err := http.ListenAndServe(":8000", nil)
+	err := http.ListenAndServe(":" + os.Getenv("PORT"), nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
@@ -157,6 +154,6 @@ func getRequest(w http.ResponseWriter) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(timeAdd)
+
 	ViewShow(w, "\nid: "+strconv.Itoa(idSensor)+"\nvalue: "+strconv.FormatFloat(valueSensor, 'f', 2, 64)+"\ndate: "+timeAdd)
 }
