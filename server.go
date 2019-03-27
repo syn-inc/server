@@ -71,7 +71,6 @@ func dbSet(idSens int, sensValue float64) {
 
 	sqlStatement := `INSERT INTO "538" (id, id_sensor, value_sensor, time_add) VALUES ($1, $2, $3, to_timestamp($4, 'yyyy-mm-dd hh24:mi:ss'))`
 	db.QueryRow(sqlStatement, idValue+1, idSens, sensValue, time.Now().Format("2006-01-02 15:04:05"))
-	db.QueryRow(`DELETE FROM "538" where id_sensor=1`)
 	if err != nil {
 		log.Println("Setting db error")
 	}
