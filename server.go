@@ -64,9 +64,7 @@ func dbSet(idSens int, sensValue float64) {
 	}
 
 	var idValue int
-	sqlGetLastId := `SELECT MAX(id) FROM "538"`
-	responseLastId := db.QueryRow(sqlGetLastId)
-	err = responseLastId.Scan(&idValue)
+	err = db.QueryRow(`SELECT MAX(id) FROM "538"`).Scan(&idValue)
 	if err != nil {
 		panic(err)
 	}
@@ -131,7 +129,7 @@ func getRequest(w http.ResponseWriter) {
 	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
 	db, err := sql.Open("postgres", PSQLInfo)
 	if err != nil {
-		panic(err)
+		db.QueryRow(`create table "538" (id integer primary key , id_sensor integer, value_sensor float(2), time_add timestamp);insert into "538" VALUES (4,1, 22.9, to_timestamp('16-05-2011 15:36:38', 'dd-mm-yyyy hh24:mi:ss'))`)
 	}
 
 	defer func() {
