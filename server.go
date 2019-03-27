@@ -40,7 +40,7 @@ func ServerBody(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/", ServerBody)
-	err := http.ListenAndServe("", nil)
+	err := http.ListenAndServe(":8000", nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
