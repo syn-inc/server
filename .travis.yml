@@ -3,20 +3,6 @@ language: go
 go:
  - 1.12.1
 
-git:
- depth: 1
-
-services:
-  - postgresql: "9.6"
-
-before_script:
-  - psql -c 'create table test_name (id integer primary key , id_sensor integer, value_sensor float(2), time_add timestamp);' -U postgres
-
 script:
   - go test ./...
 
-deploy:
-  provider: heroku
-  api_key:
-    secure: heroku_key
-  app: app_name
