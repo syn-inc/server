@@ -26,7 +26,7 @@ func ServerBody(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalf("Parse Error %s", err)
 	}
-	
+
 	if r.URL.Path == "/get" {
 		getRequest(w)
 	} else if r.URL.Path == "/set" { //&& IsSetOk(r.Form) == true

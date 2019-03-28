@@ -1,0 +1,21 @@
+go:
+ - 1.12.1
+
+git:
+ depth: 1
+
+services:
+  - postgresql
+
+before_script:
+  - psql -c 'create table "538" (id integer primary key , id_sensor integer, value_sensor float(2), time_add timestamp);insert into "538" VALUES (4,1, 22.9, to_timestamp('16-05-2011 15:36:38', 'dd-mm-yyyy hh24:mi:ss'))' -U postgres
+
+script:
+  - go test ./...
+
+deploy:
+  provider: heroku
+  api_key:
+    secure: "a551f948-cb9f-419d-84a6-30b8873f8615
+"
+  app: syn-server
