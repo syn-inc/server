@@ -5,10 +5,7 @@ import (
 	"testing"
 )
 
-
 type CheckTest []bool
-
-
 
 func TestGetter(t *testing.T) {
 	IsSetOk(url.Values{"temp": {"56"}, "hum": {"24"}})
