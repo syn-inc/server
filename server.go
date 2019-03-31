@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-var (
+const (
 	host     = os.Getenv("HOST")
 	port     = 5432
 	user     = os.Getenv("USER")
@@ -102,6 +102,7 @@ func ViewShow(w http.ResponseWriter, s string) {
 		log.Fatalf("Parse Error %s", err)
 	}
 }
+
 func IsSetOk(v url.Values) bool { //t *testing.T,
 	if len(v) != 2 {
 		//t.Log("Number of keys is not equal 2, ", v)
@@ -123,6 +124,7 @@ func IsSetOk(v url.Values) bool { //t *testing.T,
 	}
 	return true
 }
+
 func GetLastDay(v url.Values, sensId int) {
 	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
 	db, err := sql.Open("postgres", PSQLInfo)
@@ -142,6 +144,7 @@ func GetLastDay(v url.Values, sensId int) {
 		panic(err)
 	}
 }
+
 func getRequest(w http.ResponseWriter) {
 
 	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
