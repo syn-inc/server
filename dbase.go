@@ -7,12 +7,12 @@ import (
 	"os"
 )
 
-const (
-	host     = os.Getenv("HOST")
-	port     = 5432
-	user     = os.Getenv("USER")
-	password = os.Getenv("PASSWORD")
-	dbName   = os.Getenv("DATABASE")
+var (
+	host1     = os.Getenv("HOST")
+	port1     = 5432
+	user1    = os.Getenv("USER")
+	password1 = os.Getenv("PASSWORD")
+	dbName1   = os.Getenv("DATABASE")
 )
 
 func Main2(sensId int) {

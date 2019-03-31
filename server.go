@@ -125,26 +125,6 @@ func IsSetOk(v url.Values) bool { //t *testing.T,
 	return true
 }
 
-func GetLastDay(v url.Values, sensId int) {
-	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
-	db, err := sql.Open("postgres", PSQLInfo)
-	if err != nil {
-		panic(err)
-	}
-
-	defer func() {
-		flag := db.Close()
-		if flag != nil && err == nil {
-			panic(err)
-		}
-	}()
-	var idValue int
-	err = db.QueryRow(`SELECT * FROM "538" where id_sensor=$1 order by id DESC LIMIT 1`,sensId).Scan(&idValue)
-	if err != nil {
-		panic(err)
-	}
-}
-
 func getRequest(w http.ResponseWriter) {
 
 	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
