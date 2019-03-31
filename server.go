@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-const (
+var (
 	host     = os.Getenv("HOST")
 	port     = 5432
 	user     = os.Getenv("USER")
