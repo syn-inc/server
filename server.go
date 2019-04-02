@@ -1,23 +1,13 @@
 package main
 
 import (
-	"database/sql"
+	"encoding/json"
 	"fmt"
 	_ "github.com/lib/pq"
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
-	"time"
-)
-
-var (
-	host     = os.Getenv("HOST")
-	port     = 5432
-	user     = os.Getenv("USER")
-	password = os.Getenv("PASSWORD")
-	dbName   = os.Getenv("DATABASE")
 )
 
 func ServerBody(w http.ResponseWriter, r *http.Request) {
@@ -27,72 +17,40 @@ func ServerBody(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Parse Error %s", err)
 	}
 
-	if r.URL.Path == "/get" {
-		getRequest(w)
-	} else if r.URL.Path == "/set" { //&& IsSetOk(r.Form) == true
-		TempHumSet(w, r.Form)
+	if r.URL.Path == "/set" { //&& IsSetOk(r.Form) == true
+		SetData(w, r.Form)
+	} else if r.URL.Path == "/get" {
+		getRequest(w, r.Form)
 	}
 }
 
 func main() {
 	http.HandleFunc("/", ServerBody)
-	err := http.ListenAndServe(":"+os.Getenv("PORT"), nil)
+	err := http.ListenAndServe(":"+"8000", nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
 }
 
-func dbSet(idSens int, sensValue float64) {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		panic(err)
-	}
+func SetData(w http.ResponseWriter, form url.Values) {
 
-	defer func() {
-		flag := db.Close()
-		if flag != nil && err == nil {
-			panic(err)
-		}
-	}()
-
-	// should be used for checking and establishment connection to db, but which way?
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
-	var idValue int
-	err = db.QueryRow(`SELECT MAX(id) FROM "538"`).Scan(&idValue)
-	if err != nil {
-		panic(err)
-	}
-
-	sqlStatement := `INSERT INTO "538" (id, id_sensor, value_sensor, time_add) VALUES ($1, $2, $3, to_timestamp($4, 'yyyy-mm-dd hh24:mi:ss'))`
-	db.QueryRow(sqlStatement, idValue+1, idSens, sensValue, time.Now().Format("2006-01-02 15:04:05"))
-	if err != nil {
-		log.Println("Setting db error")
-	}
-}
-
-func TempHumSet(w http.ResponseWriter, Form url.Values) {
-
-	for key, value := range Form {
-		flagValue, err := strconv.ParseFloat(value[0], 64)
+	for key, value := range form {
+		newValue, err := strconv.ParseFloat(value[0], 64)
 		if err != nil {
 			panic(err)
 		}
 
-		fmt.Println(key, flagValue)
-		if flagValue != 0 {
+		fmt.Println(key, newValue)
+		if newValue != 0 {
 			newKey, err := strconv.Atoi(key)
 			if err != nil {
 				panic(err)
 			}
-			dbSet(newKey, flagValue)
+			dbSet("538", newKey, newValue)
+			// FIXME add processing of error
 			ViewShow(w, "\nSuccessfully set!")
 		}
-		flagValue = 0
+		newValue = 0
 	}
 }
 
@@ -125,34 +83,106 @@ func IsSetOk(v url.Values) bool { //t *testing.T,
 	return true
 }
 
-func getRequest(w http.ResponseWriter) {
+func getRequest(w http.ResponseWriter, form url.Values) {
 
-	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
-	db, err := sql.Open("postgres", PSQLInfo)
-	if err != nil {
-		panic(err)
+	w.Header().Set("Content-Type", "application/json")
+
+	var err error
+	var idSens int
+	var date string
+
+	for key, value := range form {
+		// TODO write tests
+		switch key {
+		case "id":
+			idSens, err = strconv.Atoi(value[0])
+			if err != nil {
+				jsonObj, err := json.Marshal(map[string]string{"errorMsg": "IncorrectParams"})
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				_, err = w.Write(jsonObj)
+				if err != nil {
+					panic(err)
+				}
+			}
+		case "date":
+			date = value[0]
+		}
 	}
 
-	defer func() {
-		flag := db.Close()
-		if flag != nil && err == nil {
+	type LastValues struct {
+		ErrorMsg string
+		Values   []float64
+	}
+
+	switch date {
+	case "last":
+		lastValues := LastValues{"ok", dbGetLastValue(idSens)}
+		jsonObj, err := json.Marshal(lastValues)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_, err = w.Write(jsonObj)
+		if err != nil {
+			panic("Wrong Write")
+		}
+	case "day":
+		lastValues := LastValues{"ok", dbGetLastDay(idSens)}
+		jsonObj, err := json.Marshal(lastValues)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_, err = w.Write(jsonObj)
+		if err != nil {
 			panic(err)
 		}
-	}()
+	case "week":
+		lastValues := LastValues{"ok", dbGetLastWeek(idSens)}
+		jsonObj, err := json.Marshal(lastValues)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_, err = w.Write(jsonObj)
+		if err != nil {
+			panic(err)
+		}
+	case "month":
 
-	var idValue int
-	err = db.QueryRow(`SELECT MAX(id) FROM "538"`).Scan(&idValue)
-	if err != nil {
-		panic(err)
+		lastValues := LastValues{"ok", dbGetLastMonth(idSens)}
+		jsonObj, err := json.Marshal(lastValues)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_, err = w.Write(jsonObj)
+		if err != nil {
+			panic(err)
+		}
+	case "year":
+		lastValues := LastValues{"ok", dbGetLastYear(idSens)}
+		jsonObj, err := json.Marshal(lastValues)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_, err = w.Write(jsonObj)
+		if err != nil {
+			panic(err)
+		}
+	default:
+		jsonObj, err := json.Marshal(map[string]string{"errorMsg": "IncorrectParams"})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_, err = w.Write(jsonObj)
+		if err != nil {
+			panic(err)
+		}
 	}
-
-	var idSensor int
-	var valueSensor float64
-	var timeAdd string
-	err = db.QueryRow(`SELECT id_sensor, value_sensor, time_add FROM "538" where id=$1`, idValue).Scan(&idSensor, &valueSensor, &timeAdd)
-	if err != nil {
-		panic(err)
-	}
-
-	ViewShow(w, "\nid: "+strconv.Itoa(idSensor)+"\nvalue: "+strconv.FormatFloat(valueSensor, 'f', 2, 64)+"\ndate: "+timeAdd)
 }
