@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func ServerBody(w http.ResponseWriter, r *http.Request) {
@@ -18,11 +19,12 @@ func ServerBody(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Parse Error %s", err)
 	}
 
-	if r.URL.Path == "/set" { //&& IsSetOk(r.Form) == true
+	if r.URL.Path == "/set" && IsSetOk(r.Form) == true {
 		SetData(w, r.Form)
-	} else if r.URL.Path == "/get" {
-		getRequest(w, r.Form)
+	} else if r.URL.Path == "/get" && IsGetOk(r.Form) {
+		GetData(w, r.Form)
 	}
+	//TODO add return json with request error
 }
 
 func main() {
@@ -31,6 +33,78 @@ func main() {
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
+}
+
+func IsSetOk(v url.Values) bool {
+	if len(v) != 1 {
+		return false
+	}
+
+	for key, value := range v {
+
+		if len(value) != 1 {
+			return false
+		}
+
+		if strings.Contains(value[0], "Inf") || strings.Contains(value[0], "NaN") {
+			return false
+		}
+
+		keyVal, err := strconv.Atoi(key)
+		if err != nil {
+			return false
+		}
+
+		if keyVal <= 0 {
+			return false
+		}
+
+		_, err = strconv.ParseFloat(value[0], 64)
+		if err != nil {
+			return false
+		}
+	}
+	return true
+}
+
+func IsGetOk(v url.Values) bool {
+
+	if len(v) != 2 {
+		return false
+	}
+
+	if len(v["id"]) != 1 || len(v["date"]) != 1 {
+		return false
+	}
+
+	for key, value := range v {
+
+		if len(value) != 1 {
+			return false
+		}
+
+		if strings.Contains(value[0], "Inf") || strings.Contains(value[0], "NaN") {
+			return false
+		}
+
+		if key == "id" {
+			keyVal, err := strconv.Atoi(value[0])
+			if err != nil {
+				return false
+			}
+			if keyVal <= 0 {
+				return false
+			}
+		}
+
+		if key == "date" {
+			optionsList := map[string]bool{"last": true, "day": true, "week": true, "month": true, "year": true}
+			if optionsList[value[0]] == false {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func SetData(w http.ResponseWriter, form url.Values) {
@@ -62,29 +136,7 @@ func ViewShow(w http.ResponseWriter, s string) {
 	}
 }
 
-func IsSetOk(v url.Values) bool { //t *testing.T,
-	if len(v) != 2 {
-		//t.Log("Number of keys is not equal 2, ", v)
-		return false
-	}
-	if len(v["temp"]) != 1 && len(v["hum"]) != 1 {
-		//t.Log("Number of arguments should be equal 1")
-		return false
-	}
-	_, err := strconv.ParseFloat(v["temp"][0], 64)
-	if err != nil {
-		//t.Log("Temp's argument isn't Float64 ", v)
-		return false
-	}
-	_, err = strconv.ParseFloat(v["hum"][0], 64)
-	if err != nil {
-		//t.Log("Humidity's argument isn't Float64, ", v)
-		return false
-	}
-	return true
-}
-
-func getRequest(w http.ResponseWriter, form url.Values) {
+func GetData(w http.ResponseWriter, form url.Values) {
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -98,15 +150,7 @@ func getRequest(w http.ResponseWriter, form url.Values) {
 		case "id":
 			idSens, err = strconv.Atoi(value[0])
 			if err != nil {
-				jsonObj, err := json.Marshal(map[string]string{"errorMsg": "IncorrectParams"})
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-				_, err = w.Write(jsonObj)
-				if err != nil {
-					panic(err)
-				}
+				ViewShow(w, "ID parse error, please contact developer to fix such errors")
 			}
 		case "date":
 			date = value[0]
@@ -118,72 +162,25 @@ func getRequest(w http.ResponseWriter, form url.Values) {
 		Values   []float64
 	}
 
+	lastValues := LastValues{"IncorrectParams", []float64{}}
 	switch date {
 	case "last":
-		lastValues := LastValues{"ok", dbGetLastValue(idSens)}
-		jsonObj, err := json.Marshal(lastValues)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		_, err = w.Write(jsonObj)
-		if err != nil {
-			panic("Wrong Write")
-		}
+		lastValues = LastValues{"ok", dbGetLastValue(idSens)}
 	case "day":
-		lastValues := LastValues{"ok", dbGetLastDay(idSens)}
-		jsonObj, err := json.Marshal(lastValues)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		_, err = w.Write(jsonObj)
-		if err != nil {
-			panic(err)
-		}
+		lastValues = LastValues{"ok", dbGetLastDay(idSens)}
 	case "week":
-		lastValues := LastValues{"ok", dbGetLastWeek(idSens)}
-		jsonObj, err := json.Marshal(lastValues)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		_, err = w.Write(jsonObj)
-		if err != nil {
-			panic(err)
-		}
+		lastValues = LastValues{"ok", dbGetLastWeek(idSens)}
 	case "month":
-
-		lastValues := LastValues{"ok", dbGetLastMonth(idSens)}
-		jsonObj, err := json.Marshal(lastValues)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		_, err = w.Write(jsonObj)
-		if err != nil {
-			panic(err)
-		}
+		lastValues = LastValues{"ok", dbGetLastMonth(idSens)}
 	case "year":
-		lastValues := LastValues{"ok", dbGetLastYear(idSens)}
-		jsonObj, err := json.Marshal(lastValues)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		_, err = w.Write(jsonObj)
-		if err != nil {
-			panic(err)
-		}
-	default:
-		jsonObj, err := json.Marshal(map[string]string{"errorMsg": "IncorrectParams"})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		_, err = w.Write(jsonObj)
-		if err != nil {
-			panic(err)
-		}
+		lastValues = LastValues{"ok", dbGetLastYear(idSens)}
+	}
+	jsonObj, err := json.Marshal(lastValues)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	_, err = w.Write(jsonObj)
+	if err != nil {
+		panic("WriteError")
 	}
 }

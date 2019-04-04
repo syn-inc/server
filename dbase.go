@@ -53,42 +53,6 @@ func dbSet(tableName string, idSens int, sensValue float64) {
 	}
 }
 
-func dbGet() (int, float64, string) {
-
-	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
-	db, err := sql.Open("postgres", PSQLInfo)
-	if err != nil {
-		panic(err)
-	}
-
-	defer func() {
-		flag := db.Close()
-		if flag != nil && err == nil {
-			panic(err)
-		}
-	}()
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
-	var idValue int
-	err = db.QueryRow(`SELECT MAX(id) FROM "538"`).Scan(&idValue)
-	if err != nil {
-		panic(err)
-	}
-
-	var idSensor int
-	var valueSensor float64
-	var timeAdd string
-	err = db.QueryRow(`SELECT id_sensor, value_sensor, time_add FROM "538" where id=$1`, idValue).Scan(&idSensor, &valueSensor, &timeAdd)
-	if err != nil {
-		panic(err)
-	}
-	return idSensor, valueSensor, timeAdd
-}
-
 func dbGetLastValue(idSens int) []float64 {
 	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
 	db, err := sql.Open("postgres", PSQLInfo)
@@ -182,7 +146,7 @@ func dbGetLastWeek(sensId int) []float64 {
                                 time_add >= now() - $2::INTERVAL and time_add <= now() - $3::INTERVAL`, sensId,
 			strconv.Itoa(i+1)+" day", strconv.Itoa(i)+" day").Scan(&value)
 		if err != nil {
-			value = 10000
+			value = 100000
 		}
 		valueArr = append(valueArr, math.Round(value*100)/100)
 	}
@@ -217,7 +181,7 @@ func dbGetLastMonth(sensId int) []float64 {
 		err = db.QueryRow(`SELECT AVG(value_sensor) AS "Average value" FROM "538" where id_sensor=$1 and
                                 time_add >= now() - $2::INTERVAL and time_add <= now() - $3::INTERVAL`, sensId, strconv.Itoa(i+1)+" day", strconv.Itoa(i)+" day").Scan(&value)
 		if err != nil {
-			value = 10000
+			value = 100000
 		}
 		valueArr = append(valueArr, math.Round(value*100)/100)
 	}
@@ -252,7 +216,7 @@ func dbGetLastYear(sensId int) []float64 {
 		err = db.QueryRow(`SELECT AVG(value_sensor) AS "Average value" FROM "538" where id_sensor=$1 and
                                 time_add >= now() - $2::INTERVAL and time_add <= now() - $3::INTERVAL and extract(year from now())=extract(year from time_add)`, sensId, strconv.Itoa(i+1)+" month", strconv.Itoa(i)+" month").Scan(&value)
 		if err != nil {
-			value = 10000
+			value = 100000
 		}
 		valueArr = append(valueArr, math.Round(value*100)/100)
 	}
