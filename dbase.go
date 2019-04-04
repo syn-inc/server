@@ -20,7 +20,7 @@ var (
 )
 
 // this method should only be used on tables with id column
-func dbSet(tableName string, idSens int, sensValue float64) {
+func dbSet(idSens int, sensValue float64) {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
@@ -40,14 +40,14 @@ func dbSet(tableName string, idSens int, sensValue float64) {
 	}
 
 	var idValue int
-	//noinspection SqlResolve
-	err = db.QueryRow(`SELECT MAX(id) FROM $1`, tableName).Scan(&idValue)
+
+	err = db.QueryRow(`SELECT MAX(id) FROM "538"`).Scan(&idValue)
 	if err != nil {
 		panic(err)
 	}
 
-	sqlStatement := `INSERT INTO $1 VALUES ($2, $3, $4, to_timestamp($5, 'yyyy-mm-dd hh24:mi:ss'))`
-	db.QueryRow(sqlStatement, tableName, idValue+1, idSens, sensValue, time.Now().Format("2000-01-01 00:00:00"))
+	sqlStatement := `INSERT INTO "538" VALUES ($1, $2, $3, to_timestamp($4, 'yyyy-mm-dd hh24:mi:ss'))`
+	db.QueryRow(sqlStatement, idValue+1, idSens, sensValue, time.Now().Format("2000-01-01 00:00:00"))
 	if err != nil {
 		log.Println("Setting db error")
 	}

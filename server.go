@@ -114,18 +114,12 @@ func SetData(w http.ResponseWriter, form url.Values) {
 		if err != nil {
 			panic(err)
 		}
-
-		fmt.Println(key, newValue)
-		if newValue != 0 {
-			newKey, err := strconv.Atoi(key)
-			if err != nil {
-				panic(err)
-			}
-			dbSet("538", newKey, newValue)
-			// FIXME add processing of error
-			ViewShow(w, "\nSuccessfully set!")
+		newKey, err := strconv.Atoi(key)
+		if err != nil {
+			panic(err)
 		}
-		newValue = 0
+		dbSet(newKey, newValue)
+		ViewShow(w, "\nSuccessfully set!")
 	}
 }
 
