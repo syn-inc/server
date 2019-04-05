@@ -9,7 +9,12 @@ type CheckTest []bool
 
 func TestIsSetOk(t *testing.T) {
 	truthStructure := CheckTest{
-		IsSetOk(url.Values{"1": {"0"}}),
+		IsGetOk(url.Values{"id": {"1"}, "value": {"2.05"}}),
+		IsGetOk(url.Values{"id": {"541"}, "value": {"-1"}}),
+		IsGetOk(url.Values{"id": {"4"}, "value": {"0"}}),
+		IsGetOk(url.Values{"id": {"421455"}, "value": {"0.9999999999999"}}),
+		IsGetOk(url.Values{"id": {"67890523"}, "value": {"0.01"}}),
+		IsGetOk(url.Values{"id": {"100"}, "value": {"6"}}),
 	}
 
 	notTruthStructure := CheckTest{
@@ -32,6 +37,25 @@ func TestIsSetOk(t *testing.T) {
 		IsSetOk(url.Values{"101": {"Inf"}}),
 		IsSetOk(url.Values{"302": {"-Inf"}}),
 		IsSetOk(url.Values{"324536245643224214": {"NaN"}}),
+
+		IsGetOk(url.Values{"date": {"1"}, "id": {"last"}}),
+		IsGetOk(url.Values{"vf": {"v"}, "v": {"vff"}}),
+		IsGetOk(url.Values{"id": {""}, "date": {""}}),
+		IsGetOk(url.Values{"id": {"1"}, "date": {""}}),
+		IsGetOk(url.Values{"id": {""}, "date": {"month"}}),
+		IsGetOk(url.Values{"id": {"-1"}, "date": {"last"}}),
+		IsGetOk(url.Values{"id": {"0"}, "date": {"last"}}),
+		IsGetOk(url.Values{"id": {"1"}, "date": {"Last"}}),
+		IsGetOk(url.Values{"id": {"1"}, "date": {"LAST"}}),
+		IsGetOk(url.Values{"id": {"1"}, "date": {"lastlast"}}),
+		IsGetOk(url.Values{"id": {"1"}, "date": {"lastmonth"}}),
+		IsGetOk(url.Values{"id": {"0.25"}, "date": {"last"}}),
+		IsGetOk(url.Values{"id": {"0.999999999999999999999999"}, "date": {"last"}}),
+		IsGetOk(url.Values{"id": {"1"}, "date": {""}}),
+		IsGetOk(url.Values{"id": {"NaN"}, "date": {"year"}}),
+		IsGetOk(url.Values{"id": {"Inf"}, "date": {"day"}}),
+		IsGetOk(url.Values{"id": {"-Inf"}, "date": {"day"}}),
+		IsGetOk(url.Values{"id": {""}, "date": {"day"}}),
 	}
 	for _, value := range truthStructure {
 		if value == false {

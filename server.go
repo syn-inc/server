@@ -19,7 +19,7 @@ func ServerBody(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Parse Error %s", err)
 	}
 
-	if r.URL.Path == "/set" && IsSetOk(r.Form) == true {
+	if r.URL.Path == os.Getenv("SET") && IsSetOk(r.Form) == true {
 		SetData(w, r.Form)
 	} else if r.URL.Path == "/get" && IsGetOk(r.Form) {
 		GetData(w, r.Form)
@@ -36,7 +36,12 @@ func main() {
 }
 
 func IsSetOk(v url.Values) bool {
-	if len(v) != 1 {
+
+	if len(v) != 2 {
+		return false
+	}
+
+	if len(v["id"]) != 1 || len(v["value"]) != 1 {
 		return false
 	}
 
@@ -50,18 +55,21 @@ func IsSetOk(v url.Values) bool {
 			return false
 		}
 
-		keyVal, err := strconv.Atoi(key)
-		if err != nil {
-			return false
+		if key == "id" {
+			keyVal, err := strconv.Atoi(value[0])
+			if err != nil {
+				return false
+			}
+			if keyVal <= 0 {
+				return false
+			}
 		}
 
-		if keyVal <= 0 {
-			return false
-		}
-
-		_, err = strconv.ParseFloat(value[0], 64)
-		if err != nil {
-			return false
+		if key == "value" {
+			_, err := strconv.ParseFloat(value[0], 64)
+			if err != nil {
+				return false
+			}
 		}
 	}
 	return true
@@ -109,18 +117,19 @@ func IsGetOk(v url.Values) bool {
 
 func SetData(w http.ResponseWriter, form url.Values) {
 
+	var newKey int
+	var newValue float64
+
 	for key, value := range form {
-		newValue, err := strconv.ParseFloat(value[0], 64)
-		if err != nil {
-			panic(err)
+		switch key {
+		case "id":
+			newKey, _ = strconv.Atoi(value[0])
+		case "value":
+			newValue, _ = strconv.ParseFloat(value[0], 64)
 		}
-		newKey, err := strconv.Atoi(key)
-		if err != nil {
-			panic(err)
-		}
-		dbSet(newKey, newValue)
-		ViewShow(w, "\nSuccessfully set!")
 	}
+	dbSet(newKey, newValue)
+	ViewShow(w, "\nSuccessfully set!")
 }
 
 func ViewShow(w http.ResponseWriter, s string) {
@@ -139,7 +148,6 @@ func GetData(w http.ResponseWriter, form url.Values) {
 	var date string
 
 	for key, value := range form {
-		// TODO write tests
 		switch key {
 		case "id":
 			idSens, err = strconv.Atoi(value[0])
