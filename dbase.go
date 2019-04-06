@@ -40,12 +40,12 @@ func dbSet(idSens int, sensValue float64) {
 
 	var idValue int
 
-	err = db.QueryRow(`SELECT MAX(id) FROM "538"`).Scan(&idValue)
+	err = db.QueryRow(`SELECT MAX(id) FROM "fict_sensors_syn"`).Scan(&idValue)
 	if err != nil {
 		panic(err)
 	}
 
-	sqlStatement := `INSERT INTO "538" VALUES ($1, $2, $3, now())`
+	sqlStatement := `INSERT INTO "fict_sensors_syn" VALUES ($1, $2, $3, now())`
 	db.QueryRow(sqlStatement, idValue+1, idSens, sensValue)
 	if err != nil {
 		log.Println("Setting db error")
@@ -72,7 +72,7 @@ func dbGetLastValue(idSens int) []float64 {
 	}
 
 	var value float64
-	err = db.QueryRow(`SELECT value_sensor FROM "538" where id_sensor=$1 order by id DESC LIMIT 1`, idSens).Scan(&value)
+	err = db.QueryRow(`SELECT value_sensor FROM "fict_sensors_syn" where id_sensor=$1 order by id DESC LIMIT 1`, idSens).Scan(&value)
 	if err != nil {
 		panic("Querying error")
 	}
@@ -105,7 +105,7 @@ func dbGetLastDay(sensId int) []float64 {
 	var valueArr []float64
 	// FIXME nil error on parse value
 	for i := 0; i < 24; i++ {
-		err = db.QueryRow(`SELECT AVG(value_sensor) AS "Average value" FROM "538" where id_sensor=$1 and
+		err = db.QueryRow(`SELECT AVG(value_sensor) AS "Average value" FROM "fict_sensors_syn" where id_sensor=$1 and
                                 time_add >= now() - $2::INTERVAL and time_add <= now() - $3::INTERVAL`, sensId, strconv.Itoa(i+1)+" hour", strconv.Itoa(i)+" hour").Scan(&value)
 		if err != nil {
 			value = 10000
@@ -141,7 +141,7 @@ func dbGetLastWeek(sensId int) []float64 {
 	var valueArr []float64
 	// FIXME nil error on parse value
 	for i := 0; i < 7; i++ {
-		err = db.QueryRow(`SELECT AVG(value_sensor) AS "Average value" FROM "538" where id_sensor=$1 and
+		err = db.QueryRow(`SELECT AVG(value_sensor) AS "Average value" FROM "fict_sensors_syn" where id_sensor=$1 and
                                 time_add >= now() - $2::INTERVAL and time_add <= now() - $3::INTERVAL`, sensId,
 			strconv.Itoa(i+1)+" day", strconv.Itoa(i)+" day").Scan(&value)
 		if err != nil {
@@ -177,7 +177,7 @@ func dbGetLastMonth(sensId int) []float64 {
 	var valueArr []float64
 	// FIXME nil error on parse value
 	for i := 0; i < 30; i++ {
-		err = db.QueryRow(`SELECT AVG(value_sensor) AS "Average value" FROM "538" where id_sensor=$1 and
+		err = db.QueryRow(`SELECT AVG(value_sensor) AS "Average value" FROM "fict_sensors_syn" where id_sensor=$1 and
                                 time_add >= now() - $2::INTERVAL and time_add <= now() - $3::INTERVAL`, sensId, strconv.Itoa(i+1)+" day", strconv.Itoa(i)+" day").Scan(&value)
 		if err != nil {
 			value = 100000
@@ -212,7 +212,7 @@ func dbGetLastYear(sensId int) []float64 {
 	var valueArr []float64
 	// FIXME nil error on parse value
 	for i := 0; i < 12; i++ {
-		err = db.QueryRow(`SELECT AVG(value_sensor) AS "Average value" FROM "538" where id_sensor=$1 and
+		err = db.QueryRow(`SELECT AVG(value_sensor) AS "Average value" FROM "fict_sensors_syn" where id_sensor=$1 and
                                 time_add >= now() - $2::INTERVAL and time_add <= now() - $3::INTERVAL and extract(year from now())=extract(year from time_add)`, sensId, strconv.Itoa(i+1)+" month", strconv.Itoa(i)+" month").Scan(&value)
 		if err != nil {
 			value = 100000
