@@ -1,6 +1,5 @@
 [![Build Status](https://travis-ci.com/syn-inc/server.svg?branch=master)](https://travis-ci.com/syn-inc/server)
 [![Go Report Card](https://goreportcard.com/badge/github.com/syn-inc/server)](https://goreportcard.com/report/github.com/syn-inc/server)
-[![codecov](https://codecov.io/gh/syn-inc/server/branch/master/graph/badge.svg)](https://codecov.io/gh/syn-inc/server)
 
 # SYN-server
 ## Samples of requests:
