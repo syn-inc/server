@@ -8,6 +8,6 @@ ADD . $SRC_DIR
 
 EXPOSE 8000
 
-RUN cd $SRC_DIR; go get -t github.com/tools/godep; godep restore; go build -o server; cp server /app/
+RUN cd $SRC_DIR; go build -o server; cp server /app/
 
 ENTRYPOINT ["./server"]
