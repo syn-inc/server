@@ -12,6 +12,12 @@ import (
 	"strings"
 )
 
+//Structure for default JSON-file
+type JsonResp struct {
+	ErrorMsg string
+	Values   []float64
+}
+
 func ServerBody(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 
@@ -19,12 +25,22 @@ func ServerBody(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Parse Error %s", err)
 	}
 
-	if r.URL.Path == os.Getenv("SET") && IsSetOk(r.Form) == true {
+	if r.URL.Path == os.Getenv("SET") && IsSetOk(r.Form){
 		SetData(w, r.Form)
 	} else if r.URL.Path == "/get" && IsGetOk(r.Form) {
 		GetData(w, r.Form)
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		response := JsonResp{"404", []float64{}}
+		jsonObj, err := json.Marshal(response)
+		if err != nil {
+			panic("Cannot Marshal 404 JSON")
+		}
+		_, err = w.Write(jsonObj)
+		if err != nil {
+			panic("Cannot write 404 JSON")
+		}
 	}
-	//TODO add return json with request error
 }
 
 func main() {
@@ -35,6 +51,7 @@ func main() {
 	}
 }
 
+//Checks set-request for its correctness
 func IsSetOk(v url.Values) bool {
 
 	if len(v) != 2 {
@@ -75,6 +92,7 @@ func IsSetOk(v url.Values) bool {
 	return true
 }
 
+//Checks get-request for its correctness
 func IsGetOk(v url.Values) bool {
 
 	if len(v) != 2 {
@@ -107,7 +125,7 @@ func IsGetOk(v url.Values) bool {
 
 		if key == "date" {
 			optionsList := map[string]bool{"last": true, "day": true, "week": true, "month": true, "year": true}
-			if optionsList[value[0]] == false {
+			if ! optionsList[value[0]] {
 				return false
 			}
 		}
@@ -115,6 +133,7 @@ func IsGetOk(v url.Values) bool {
 	return true
 }
 
+// Processes given data and transmit it to func dbSet()
 func SetData(w http.ResponseWriter, form url.Values) {
 
 	var newKey int
@@ -129,9 +148,10 @@ func SetData(w http.ResponseWriter, form url.Values) {
 		}
 	}
 	dbSet(newKey, newValue)
-	ViewShow(w, "\nSuccessfully set!")
+	ViewShow(w, "gSuccessfully set!")
 }
 
+//Output given string on the page
 func ViewShow(w http.ResponseWriter, s string) {
 	_, err := fmt.Fprintf(w, s)
 	if err != nil {
@@ -139,6 +159,7 @@ func ViewShow(w http.ResponseWriter, s string) {
 	}
 }
 
+// Processes and output given data then transmit it to func dbGetLast...()
 func GetData(w http.ResponseWriter, form url.Values) {
 
 	w.Header().Set("Content-Type", "application/json")
@@ -147,6 +168,7 @@ func GetData(w http.ResponseWriter, form url.Values) {
 	var idSens int
 	var date string
 
+	//Parse values and keys from get request
 	for key, value := range form {
 		switch key {
 		case "id":
@@ -159,28 +181,26 @@ func GetData(w http.ResponseWriter, form url.Values) {
 		}
 	}
 
-	type LastValues struct {
-		ErrorMsg string
-		Values   []float64
-	}
-
-	lastValues := LastValues{"IncorrectParams", []float64{}}
+	//Creating appropriate to request JSON-file
+	lastValues := JsonResp{"IncorrectParams", []float64{}}
 	switch date {
 	case "last":
-		lastValues = LastValues{"ok", dbGetLastValue(idSens)}
+		lastValues = JsonResp{"ok", dbGetLastValue(idSens)}
 	case "day":
-		lastValues = LastValues{"ok", dbGetLastDay(idSens)}
+		lastValues = JsonResp{"ok", dbGetLastDay(idSens)}
 	case "week":
-		lastValues = LastValues{"ok", dbGetLastWeek(idSens)}
+		lastValues = JsonResp{"ok", dbGetLastWeek(idSens)}
 	case "month":
-		lastValues = LastValues{"ok", dbGetLastMonth(idSens)}
+		lastValues = JsonResp{"ok", dbGetLastMonth(idSens)}
 	case "year":
-		lastValues = LastValues{"ok", dbGetLastYear(idSens)}
+		lastValues = JsonResp{"ok", dbGetLastYear(idSens)}
 	}
 	jsonObj, err := json.Marshal(lastValues)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+
+	//Output JSON
 	_, err = w.Write(jsonObj)
 	if err != nil {
 		panic("WriteError")

@@ -74,7 +74,7 @@ func dbGetLastValue(idSens int) []float64 {
 	var value float64
 	err = db.QueryRow(`SELECT value_sensor FROM "fict_sensors_syn" where id_sensor=$1 order by id DESC LIMIT 1`, idSens).Scan(&value)
 	if err != nil {
-		panic("Querying error")
+		return []float64{}
 	}
 
 	// round value
