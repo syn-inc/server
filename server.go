@@ -25,7 +25,7 @@ func ServerBody(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Parse Error %s", err)
 	}
 
-	if r.URL.Path == os.Getenv("SET") && IsSetOk(r.Form){
+	if r.URL.Path == os.Getenv("SET") && IsSetOk(r.Form) {
 		SetData(w, r.Form)
 	} else if r.URL.Path == "/get" && IsGetOk(r.Form) {
 		GetData(w, r.Form)
@@ -125,7 +125,7 @@ func IsGetOk(v url.Values) bool {
 
 		if key == "date" {
 			optionsList := map[string]bool{"last": true, "day": true, "week": true, "month": true, "year": true}
-			if ! optionsList[value[0]] {
+			if !optionsList[value[0]] {
 				return false
 			}
 		}
