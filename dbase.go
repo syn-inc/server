@@ -18,7 +18,7 @@ var (
 	dbName   = os.Getenv("DATABASE")
 )
 
-// this method should only be used on tables with id column
+//dbSet Insert data such as id of a sensor and its value into a database; this method should only be used on tables with id column
 func dbSet(idSens int, sensValue float64) {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
 	db, err := sql.Open("postgres", psqlInfo)
@@ -52,6 +52,7 @@ func dbSet(idSens int, sensValue float64) {
 	}
 }
 
+//dbGetLastMonth return last value for given id of a sensor
 func dbGetLastValue(idSens int) []float64 {
 	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
 	db, err := sql.Open("postgres", PSQLInfo)
@@ -81,6 +82,7 @@ func dbGetLastValue(idSens int) []float64 {
 	return []float64{math.Round(value*100) / 100}
 }
 
+//dbGetLastMonth return values for each of the last 24 hours
 func dbGetLastDay(sensId int) []float64 {
 
 	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
@@ -117,6 +119,7 @@ func dbGetLastDay(sensId int) []float64 {
 	return valueArr
 }
 
+//dbGetLastWeek return values for each of the last 7 days
 func dbGetLastWeek(sensId int) []float64 {
 
 	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
@@ -153,6 +156,7 @@ func dbGetLastWeek(sensId int) []float64 {
 	return valueArr
 }
 
+//dbGetLastMonth return values for each of the last 30 days
 func dbGetLastMonth(sensId int) []float64 {
 
 	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
@@ -188,6 +192,7 @@ func dbGetLastMonth(sensId int) []float64 {
 	return valueArr
 }
 
+//dbGetLastYear return values for each of the last 12 months
 func dbGetLastYear(sensId int) []float64 {
 
 	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)

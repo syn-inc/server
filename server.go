@@ -51,7 +51,7 @@ func main() {
 	}
 }
 
-//Checks set-request for its correctness
+//IsSetOk Checks set-request for its correctness
 func IsSetOk(v url.Values) bool {
 
 	if len(v) != 2 {
@@ -92,7 +92,7 @@ func IsSetOk(v url.Values) bool {
 	return true
 }
 
-//Checks get-request for its correctness
+//IsGetOk Checks get-request for its correctness
 func IsGetOk(v url.Values) bool {
 
 	if len(v) != 2 {
@@ -133,7 +133,7 @@ func IsGetOk(v url.Values) bool {
 	return true
 }
 
-// Processes given data and transmit it to func dbSet()
+//SetData Processes given data and transmit it to func dbSet()
 func SetData(w http.ResponseWriter, form url.Values) {
 
 	var newKey int
@@ -151,7 +151,7 @@ func SetData(w http.ResponseWriter, form url.Values) {
 	ViewShow(w, "gSuccessfully set!")
 }
 
-//Output given string on the page
+//ViewShowOutput given string on the page
 func ViewShow(w http.ResponseWriter, s string) {
 	_, err := fmt.Fprintf(w, s)
 	if err != nil {
@@ -159,7 +159,7 @@ func ViewShow(w http.ResponseWriter, s string) {
 	}
 }
 
-// Processes and output given data then transmit it to func dbGetLast...()
+//GetData Processes and output given data then transmit it to func dbGetLast...()
 func GetData(w http.ResponseWriter, form url.Values) {
 
 	w.Header().Set("Content-Type", "application/json")
