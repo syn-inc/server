@@ -1,61 +1,25 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
-	_ "github.com/lib/pq"
-	"log"
-	"math"
+	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"os"
-	"strconv"
+	"time"
 )
 
-var (
-	host     = os.Getenv("HOST")
-	port     = 5432
-	user     = os.Getenv("USER")
-	password = os.Getenv("PASSWORD")
-	dbName   = os.Getenv("DATABASE")
-)
+var configStr = os.Getenv("URL")
 
-// this method should only be used on tables with id column
-func dbSet(idSens int, sensValue float64) {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		panic(err)
-	}
-
-	defer func() {
-		flag := db.Close()
-		if flag != nil && err == nil {
-			panic(err)
-		}
-	}()
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
-	var idValue int
-
-	err = db.QueryRow(`SELECT MAX(id) FROM "fict_sensors_syn"`).Scan(&idValue)
-	if err != nil {
-		panic(err)
-	}
-
-	sqlStatement := `INSERT INTO "fict_sensors_syn" VALUES ($1, $2, $3, now())`
-	db.QueryRow(sqlStatement, idValue+1, idSens, sensValue)
-	if err != nil {
-		log.Println("Setting db error")
-	}
+type Sensor struct {
+	Id           int       `gorm:"serial"`
+	Id_sensor    int       `gorm:"type:integer; not null"`
+	Value_sensor float64   `gorm:"type float(2); not null"`
+	Time_add     time.Time `gorm:"type:timestamp; not null"`
 }
 
-func dbGetLastValue(idSens int) []float64 {
-	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
-	db, err := sql.Open("postgres", PSQLInfo)
+func dbPostData(idSens int, valueSens float64, ctx *gin.Context) {
+	db, err := gorm.Open("postgres", configStr)
 	if err != nil {
+		ctx.JSON(500, gin.H{"ErrorMSG": err.Error()})
 		panic(err)
 	}
 
@@ -66,159 +30,9 @@ func dbGetLastValue(idSens int) []float64 {
 		}
 	}()
 
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
+	sensor := Sensor{Id_sensor: idSens, Value_sensor: valueSens, Time_add: time.Now()}
+	db.Create(&sensor)
 
-	var value float64
-	err = db.QueryRow(`SELECT value_sensor FROM "fict_sensors_syn" where id_sensor=$1 order by id DESC LIMIT 1`, idSens).Scan(&value)
-	if err != nil {
-		panic("Querying error")
-	}
-
-	// round value
-	return []float64{math.Round(value*100) / 100}
-}
-
-func dbGetLastDay(sensId int) []float64 {
-
-	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
-	db, err := sql.Open("postgres", PSQLInfo)
-	if err != nil {
-		panic(err)
-	}
-
-	defer func() {
-		flag := db.Close()
-		if flag != nil && err == nil {
-			panic(err)
-		}
-	}()
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
-	var value float64
-	var valueArr []float64
-	// FIXME nil error on parse value
-	for i := 0; i < 24; i++ {
-		err = db.QueryRow(`SELECT AVG(value_sensor) AS "Average value" FROM "fict_sensors_syn" where id_sensor=$1 and
-                                time_add >= now() - $2::INTERVAL and time_add <= now() - $3::INTERVAL`, sensId, strconv.Itoa(i+1)+" hour", strconv.Itoa(i)+" hour").Scan(&value)
-		if err != nil {
-			value = 10000
-		}
-		valueArr = append(valueArr, math.Round(value*100)/100)
-		err = nil
-	}
-	fmt.Println(valueArr)
-	return valueArr
-}
-
-func dbGetLastWeek(sensId int) []float64 {
-
-	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
-	db, err := sql.Open("postgres", PSQLInfo)
-	if err != nil {
-		panic(err)
-	}
-
-	defer func() {
-		flag := db.Close()
-		if flag != nil && err == nil {
-			panic(err)
-		}
-	}()
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
-	var value float64
-	var valueArr []float64
-	// FIXME nil error on parse value
-	for i := 0; i < 7; i++ {
-		err = db.QueryRow(`SELECT AVG(value_sensor) AS "Average value" FROM "fict_sensors_syn" where id_sensor=$1 and
-                                time_add >= now() - $2::INTERVAL and time_add <= now() - $3::INTERVAL`, sensId,
-			strconv.Itoa(i+1)+" day", strconv.Itoa(i)+" day").Scan(&value)
-		if err != nil {
-			value = 100000
-		}
-		valueArr = append(valueArr, math.Round(value*100)/100)
-	}
-	fmt.Println(valueArr)
-	return valueArr
-}
-
-func dbGetLastMonth(sensId int) []float64 {
-
-	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
-	db, err := sql.Open("postgres", PSQLInfo)
-	if err != nil {
-		panic(err)
-	}
-
-	defer func() {
-		flag := db.Close()
-		if flag != nil && err == nil {
-			panic(err)
-		}
-	}()
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
-	var value float64
-	var valueArr []float64
-	// FIXME nil error on parse value
-	for i := 0; i < 30; i++ {
-		err = db.QueryRow(`SELECT AVG(value_sensor) AS "Average value" FROM "fict_sensors_syn" where id_sensor=$1 and
-                                time_add >= now() - $2::INTERVAL and time_add <= now() - $3::INTERVAL`, sensId, strconv.Itoa(i+1)+" day", strconv.Itoa(i)+" day").Scan(&value)
-		if err != nil {
-			value = 100000
-		}
-		valueArr = append(valueArr, math.Round(value*100)/100)
-	}
-	fmt.Println(valueArr)
-	return valueArr
-}
-
-func dbGetLastYear(sensId int) []float64 {
-
-	PSQLInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbName)
-	db, err := sql.Open("postgres", PSQLInfo)
-	if err != nil {
-		panic(err)
-	}
-
-	defer func() {
-		flag := db.Close()
-		if flag != nil && err == nil {
-			panic(err)
-		}
-	}()
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
-	var value float64
-	var valueArr []float64
-	// FIXME nil error on parse value
-	for i := 0; i < 12; i++ {
-		err = db.QueryRow(`SELECT AVG(value_sensor) AS "Average value" FROM "fict_sensors_syn" where id_sensor=$1 and
-                                time_add >= now() - $2::INTERVAL and time_add <= now() - $3::INTERVAL and extract(year from now())=extract(year from time_add)`, sensId, strconv.Itoa(i+1)+" month", strconv.Itoa(i)+" month").Scan(&value)
-		if err != nil {
-			value = 100000
-		}
-		valueArr = append(valueArr, math.Round(value*100)/100)
-	}
-	fmt.Println(valueArr)
-	return valueArr
+	ctx.JSON(200, gin.H{
+		"ErrorMSG": ""})
 }
