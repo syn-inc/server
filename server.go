@@ -18,6 +18,7 @@ type JsonResp struct {
 	Values   []float64
 }
 
+//ServerBody process requests
 func ServerBody(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 
@@ -30,12 +31,15 @@ func ServerBody(w http.ResponseWriter, r *http.Request) {
 	} else if r.URL.Path == "/get" && IsGetOk(r.Form) {
 		GetData(w, r.Form)
 	} else {
+
 		w.Header().Set("Content-Type", "application/json")
 		response := JsonResp{"404", []float64{}}
 		jsonObj, err := json.Marshal(response)
+
 		if err != nil {
 			panic("Cannot Marshal 404 JSON")
 		}
+
 		_, err = w.Write(jsonObj)
 		if err != nil {
 			panic("Cannot write 404 JSON")
@@ -43,6 +47,7 @@ func ServerBody(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//main run server for defined port
 func main() {
 	http.HandleFunc("/", ServerBody)
 	err := http.ListenAndServe(":"+os.Getenv("PORT"), nil)
@@ -148,7 +153,7 @@ func SetData(w http.ResponseWriter, form url.Values) {
 		}
 	}
 	dbSet(newKey, newValue)
-	ViewShow(w, "gSuccessfully set!")
+	ViewShow(w, "Successfully set!")
 }
 
 //ViewShowOutput given string on the page

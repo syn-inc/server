@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
-	"log"
 	"math"
 	"os"
 	"strconv"
@@ -12,7 +11,7 @@ import (
 
 var (
 	host     = os.Getenv("HOST")
-	port     = 5432
+	port     = 5433
 	user     = os.Getenv("USER")
 	password = os.Getenv("PASSWORD")
 	dbName   = os.Getenv("DATABASE")
@@ -46,9 +45,9 @@ func dbSet(idSens int, sensValue float64) {
 	}
 
 	sqlStatement := `INSERT INTO "fict_sensors_syn" VALUES ($1, $2, $3, now())`
-	db.QueryRow(sqlStatement, idValue+1, idSens, sensValue)
+	_, err = db.Exec(sqlStatement, idValue+1, idSens, sensValue)
 	if err != nil {
-		log.Println("Setting db error")
+		panic("Cannot insert new data")
 	}
 }
 
