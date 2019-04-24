@@ -17,6 +17,7 @@ func main() {
 	r.GET("/month", getMonth)
 	r.GET("/year", getYear)
 	r.POST("", postData)
+
 	portName := ":" + os.Getenv("PORT")
 	err := r.Run(portName)
 
@@ -95,6 +96,7 @@ func IsSetOk(idSens, valueSens string, ctx *gin.Context) bool {
 	}
 
 	_, err = strconv.ParseFloat(valueSens, 64)
+
 	if err != nil {
 		ErrorResp(ctx, "")
 		return false
