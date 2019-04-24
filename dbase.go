@@ -20,15 +20,19 @@ type Sensor struct {
 	TimeAdd     time.Time `gorm:"column:time_add; type:timestamp; not null"`
 }
 
+//TableName returns new name for table
+func (Sensor) TableName() string {
+	return "fict_sensors_syn"
+}
+
 //Avg struct describes object for receiving average value for different time ranges
 type Avg struct {
 	Avg float64 `gorm:"column:avg"`
 }
 
-//TableName returns new name for table
-func (Sensor) TableName() string {
-	return "fict_sensors_syn"
-}
+var lastValue Sensor
+var avgArr []float64
+var avgValue Avg
 
 //dbPostData insert new data into table
 func dbPostData(idSens int, valueSens float64, ctx *gin.Context) {
@@ -67,24 +71,20 @@ func dbGet(date string, ctx *gin.Context) {
 		}
 	}()
 
-	var lastValue Sensor
-	var avgArr []float64
-	var avgValue Avg
-
 	idSensRaw := ctx.Query("id")
 	idSens, _ := strconv.Atoi(idSensRaw)
 
 	switch date {
 	case "last":
-		dbGetLast(idSens, lastValue, db, ctx)
+		dbGetLast(idSens, db, ctx)
 	case "day":
-		dbGetDay(idSens, avgValue, avgArr, db, ctx)
+		dbGetDay(idSens, db, ctx)
 	case "week":
-		dbGetWeek(idSens, avgValue, avgArr, db, ctx)
+		dbGetWeek(idSens, db, ctx)
 	case "month":
-		dbGetMonth(idSens, avgValue, avgArr, db, ctx)
+		dbGetMonth(idSens, db, ctx)
 	case "year":
-		dbGetYear(idSens, avgValue, avgArr, db, ctx)
+		dbGetYear(idSens, db, ctx)
 	default:
 		ctx.JSON(404, gin.H{
 			"ErrorMSG": ""})
@@ -92,14 +92,18 @@ func dbGet(date string, ctx *gin.Context) {
 }
 
 //dbGetLast realizes query for the last value of certain sensor
-func dbGetLast(idSens int, value Sensor, db *gorm.DB, ctx *gin.Context) {
-	db.Raw(`SELECT value_sensor FROM fict_sensors_syn where id_sensor=? order by id desc limit 1;`, idSens).Scan(&value)
+func dbGetLast(idSens int, db *gorm.DB, ctx *gin.Context) {
+	db.Raw(`SELECT value_sensor FROM fict_sensors_syn where id_sensor=? order by id desc limit 1;`,
+		idSens).Scan(&lastValue)
 	ctx.JSON(200, gin.H{
-		"ErrorMSG": "", "values": math.Round(value.ValueSensor*100) / 100})
+		"ErrorMSG": "", "values": math.Round(lastValue.ValueSensor*100) / 100})
+
+	// clear variable since they are in the outer scope
+	lastValue.ValueSensor = 0
 }
 
 //dbGetDay realizes query for average value for each of the last 24 hours
-func dbGetDay(idSens int, avgValue Avg, avgArr []float64, db *gorm.DB, ctx *gin.Context) {
+func dbGetDay(idSens int, db *gorm.DB, ctx *gin.Context) {
 
 	// Okay, I know, this query is pretty far from being the best one, but there's no opportunity to use group by,
 	// cause group by doesn't count hours/days/month where were no values and there is no more comfortable way
@@ -120,19 +124,27 @@ func dbGetDay(idSens int, avgValue Avg, avgArr []float64, db *gorm.DB, ctx *gin.
 	// so as far as there are no thousands of users and database is on the same server as backend (at least this query)
 	// things are not that bad as they seems to be at first
 	for i := 0; i < 24; i++ {
-		db.Raw(`SELECT AVG(value_sensor) AS "avg" FROM fict_sensors_syn where id_sensor=? and time_add >= now() - ?::INTERVAL
-					and time_add <= now() - ?::INTERVAL`, idSens, strconv.Itoa(i+1)+" hour",
+		db.Raw(`SELECT AVG(value_sensor) AS "avg" FROM fict_sensors_syn where id_sensor=? and time_add >= now() 
+					- ?::INTERVAL and time_add <= now() - ?::INTERVAL`, idSens, strconv.Itoa(i+1)+" hour",
 			strconv.Itoa(i)+" hour").Scan(&avgValue)
 
+		// Firstly it looks like there's a bug here, avgValue.Avg is not clearing each iteration, but it's not a bug,
+		// it is a feature! The resulting array will be used later for charts, so instead of breaking smooth line of
+		// curve it just repeats the last non-null value if it exist. Agree, maybe it's not the best solution, but for
+		// now so, although it'll might be changed later.
 		avgArr = append(avgArr, math.Round(avgValue.Avg*100)/100)
 	}
 
 	ctx.JSON(200, gin.H{
 		"ErrorMSG": "", "values": avgArr})
+
+	// clear variables since they are in the outer scope
+	avgValue.Avg = 0
+	avgArr = []float64{}
 }
 
 //dbGetWeek realizes query for average value for each of the last 7 days
-func dbGetWeek(idSens int, avgValue Avg, avgArr []float64, db *gorm.DB, ctx *gin.Context) {
+func dbGetWeek(idSens int, db *gorm.DB, ctx *gin.Context) {
 
 	for i := 0; i < 7; i++ {
 		db.Raw(`SELECT AVG(value_sensor) AS "avg" FROM sensors where id_sensor=? and time_add >= now() - ?::INTERVAL
@@ -144,10 +156,14 @@ func dbGetWeek(idSens int, avgValue Avg, avgArr []float64, db *gorm.DB, ctx *gin
 
 	ctx.JSON(200, gin.H{
 		"ErrorMSG": "", "values": avgArr})
+
+	// clear variables since they are in the outer scope
+	avgValue.Avg = 0
+	avgArr = []float64{}
 }
 
 //dbGetMonth realizes query for average value for each of the last 30 days
-func dbGetMonth(idSens int, avgValue Avg, avgArr []float64, db *gorm.DB, ctx *gin.Context) {
+func dbGetMonth(idSens int, db *gorm.DB, ctx *gin.Context) {
 
 	for i := 0; i < 30; i++ {
 		db.Raw(`SELECT AVG(value_sensor) AS "avg" FROM sensors where id_sensor=? and time_add >= now() - ?::INTERVAL
@@ -159,10 +175,14 @@ func dbGetMonth(idSens int, avgValue Avg, avgArr []float64, db *gorm.DB, ctx *gi
 
 	ctx.JSON(200, gin.H{
 		"ErrorMSG": "", "values": avgArr})
+
+	// clear variables since they are in the outer scope
+	avgValue.Avg = 0
+	avgArr = []float64{}
 }
 
 //dbGetYear realizes query for average value for each of the last 12 month
-func dbGetYear(idSens int, avgValue Avg, avgArr []float64, db *gorm.DB, ctx *gin.Context) {
+func dbGetYear(idSens int, db *gorm.DB, ctx *gin.Context) {
 
 	for i := 0; i < 12; i++ {
 		db.Raw(`SELECT AVG(value_sensor) AS "avg" FROM sensors where id_sensor=? and time_add >= now() - ?::INTERVAL
@@ -174,4 +194,8 @@ func dbGetYear(idSens int, avgValue Avg, avgArr []float64, db *gorm.DB, ctx *gin
 
 	ctx.JSON(200, gin.H{
 		"ErrorMSG": "", "values": avgArr})
+
+	// clear variables since they are in the outer scope
+	avgValue.Avg = 0
+	avgArr = []float64{}
 }

@@ -10,6 +10,7 @@ import (
 
 //main explores request for its HTTP-method and redirect it to appropriate function
 func main() {
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.GET("/last", getLast)
 	r.GET("/day", getDay)
@@ -39,7 +40,7 @@ func postData(ctx *gin.Context) {
 	}
 }
 
-//getLasr test validness of request
+//getLast test validness of request
 func getLast(ctx *gin.Context) {
 	if IsGetOk(ctx) {
 		dbGet("last", ctx)
