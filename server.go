@@ -3,59 +3,126 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"os"
 	"strconv"
 	"strings"
 )
 
+//main explores request for its HTTP-method and redirect it to appropriate function
 func main() {
 	r := gin.Default()
-	r.GET("/get", getLast)
+	r.GET("/last", getLast)
+	r.GET("/day", getDay)
+	r.GET("/week", getWeek)
+	r.GET("/month", getMonth)
+	r.GET("/year", getYear)
 	r.POST("", postData)
-
-	portName := ":8000"
+	portName := ":" + os.Getenv("PORT")
 	err := r.Run(portName)
+
 	if err != nil {
 		panic("Cannot open port " + portName)
 	}
 }
 
-func getLast(ctx *gin.Context) {
-	ctx.JSON(200, gin.H{
-		"message": "pong"})
-}
-
+//postData test validness of request
 func postData(ctx *gin.Context) {
 	idSensRaw := ctx.Query("id")
 	valueSensRaw := ctx.Query("value")
+
 	idSens, _ := strconv.Atoi(idSensRaw)
 	valueSens, _ := strconv.ParseFloat(valueSensRaw, 64)
-	if IsSetOk(idSensRaw, valueSensRaw) {
+
+	if IsSetOk(idSensRaw, valueSensRaw, ctx) {
 		dbPostData(idSens, valueSens, ctx)
 	}
 }
 
+//getLasr test validness of request
+func getLast(ctx *gin.Context) {
+	if IsGetOk(ctx) {
+		dbGet("last", ctx)
+	} else {
+		ctx.JSON(500, gin.H{"ErrorMSG": "Incorrect params"})
+	}
+}
+
+//getDay test validness of request
+func getDay(ctx *gin.Context) {
+	if IsGetOk(ctx) {
+		dbGet("day", ctx)
+	}
+}
+
+//getWeek test validness of request
+func getWeek(ctx *gin.Context) {
+	if IsGetOk(ctx) {
+		dbGet("week", ctx)
+	}
+}
+
+//getMonth test validness of request
+func getMonth(ctx *gin.Context) {
+	if IsGetOk(ctx) {
+		dbGet("month", ctx)
+	}
+}
+
+//getYear test validness of request
+func getYear(ctx *gin.Context) {
+	if IsGetOk(ctx) {
+		dbGet("year", ctx)
+	}
+}
+
 //IsSetOk Checks set-request for its correctness
-func IsSetOk(idSens, valueSens string) bool {
+func IsSetOk(idSens, valueSens string, ctx *gin.Context) bool {
 
 	if strings.Contains(idSens, "Inf") || strings.Contains(idSens, "NaN") {
+		ErrorResp(ctx, "")
 		return false
 	}
 
 	if strings.Contains(valueSens, "Inf") || strings.Contains(valueSens, "NaN") {
+		ErrorResp(ctx, "")
 		return false
 	}
 
 	keyVal, err := strconv.Atoi(idSens)
-	if err != nil {
-		return false
-	}
-	if keyVal <= 0 {
+	if err != nil || keyVal <= 0 {
+		ErrorResp(ctx, "")
 		return false
 	}
 
 	_, err = strconv.ParseFloat(valueSens, 64)
 	if err != nil {
+		ErrorResp(ctx, "")
 		return false
 	}
 	return true
+}
+
+//IsGetOk test get-request
+func IsGetOk(ctx *gin.Context) bool {
+
+	idSens := ctx.Query("id")
+
+	if strings.Contains(idSens, "Inf") || strings.Contains(idSens, "NaN") {
+		ErrorResp(ctx, "")
+		return false
+	}
+
+	keyVal, err := strconv.Atoi(idSens)
+
+	if err != nil || keyVal <= 0 {
+		ErrorResp(ctx, "")
+		return false
+	}
+	return true
+}
+
+//ErrorResp return JSON in response body with 500 code as result of wrong request and error message which describes it
+func ErrorResp(ctx *gin.Context, err string) {
+	ctx.JSON(500, gin.H{"ErrorMSG": err})
+	panic(err)
 }
