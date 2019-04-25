@@ -17,7 +17,7 @@ func main() {
 	r.GET("/week", getWeek)
 	r.GET("/month", getMonth)
 	r.GET("/year", getYear)
-	r.POST("", postData)
+	r.POST(os.Getenv("SET"), postData)
 
 	portName := ":" + os.Getenv("PORT")
 	err := r.Run(portName)
