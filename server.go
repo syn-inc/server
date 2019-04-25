@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-//main explores request for its HTTP-method and redirect it to appropriate function
+// main explores request for its HTTP-method and redirect it to appropriate function
 func main() {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
@@ -27,20 +27,22 @@ func main() {
 	}
 }
 
-//postData test validness of request
+// postData test validness of request
 func postData(ctx *gin.Context) {
+
 	idSensRaw := ctx.Query("id")
 	valueSensRaw := ctx.Query("value")
 
-	idSens, _ := strconv.Atoi(idSensRaw)
-	valueSens, _ := strconv.ParseFloat(valueSensRaw, 64)
-
 	if IsSetOk(idSensRaw, valueSensRaw, ctx) {
+
+		// err is muted due to validness check IsSetOk, so if there's an error it'll will be handled during check
+		idSens, _ := strconv.Atoi(idSensRaw)
+		valueSens, _ := strconv.ParseFloat(valueSensRaw, 64)
 		dbPostData(idSens, valueSens, ctx)
 	}
 }
 
-//getLast test validness of request
+// getLast test validness of request
 func getLast(ctx *gin.Context) {
 	if IsGetOk(ctx) {
 		dbGet("last", ctx)
@@ -49,35 +51,43 @@ func getLast(ctx *gin.Context) {
 	}
 }
 
-//getDay test validness of request
+// getDay test validness of request
 func getDay(ctx *gin.Context) {
 	if IsGetOk(ctx) {
 		dbGet("day", ctx)
+	} else {
+		ctx.JSON(500, gin.H{"ErrorMSG": "Incorrect params"})
 	}
 }
 
-//getWeek test validness of request
+// getWeek test validness of request
 func getWeek(ctx *gin.Context) {
 	if IsGetOk(ctx) {
 		dbGet("week", ctx)
+	} else {
+		ctx.JSON(500, gin.H{"ErrorMSG": "Incorrect params"})
 	}
 }
 
-//getMonth test validness of request
+// getMonth test validness of request
 func getMonth(ctx *gin.Context) {
 	if IsGetOk(ctx) {
 		dbGet("month", ctx)
+	} else {
+		ctx.JSON(500, gin.H{"ErrorMSG": "Incorrect params"})
 	}
 }
 
-//getYear test validness of request
+// getYear test validness of request
 func getYear(ctx *gin.Context) {
 	if IsGetOk(ctx) {
 		dbGet("year", ctx)
+	} else {
+		ctx.JSON(500, gin.H{"ErrorMSG": "Incorrect params"})
 	}
 }
 
-//IsSetOk Checks set-request for its correctness
+// IsSetOk Checks set-request for its correctness
 func IsSetOk(idSens, valueSens string, ctx *gin.Context) bool {
 
 	if strings.Contains(idSens, "Inf") || strings.Contains(idSens, "NaN") {
@@ -105,7 +115,7 @@ func IsSetOk(idSens, valueSens string, ctx *gin.Context) bool {
 	return true
 }
 
-//IsGetOk test get-request
+// IsGetOk test get-request
 func IsGetOk(ctx *gin.Context) bool {
 
 	idSens := ctx.Query("id")
@@ -124,7 +134,7 @@ func IsGetOk(ctx *gin.Context) bool {
 	return true
 }
 
-//ErrorResp return JSON in response body with 500 code as result of wrong request and error message which describes it
+// ErrorResp return JSON in response body with 500 code as result of wrong request and error message which describes it
 func ErrorResp(ctx *gin.Context, err string) {
 	ctx.JSON(500, gin.H{"ErrorMSG": err})
 	panic(err)
