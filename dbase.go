@@ -147,7 +147,7 @@ func dbGetDay(idSens int, db *gorm.DB, ctx *gin.Context) {
 func dbGetWeek(idSens int, db *gorm.DB, ctx *gin.Context) {
 
 	for i := 0; i < 7; i++ {
-		db.Raw(`SELECT AVG(value_sensor) AS "avg" FROM sensors where id_sensor=? and time_add >= now() - ?::INTERVAL
+		db.Raw(`SELECT AVG(value_sensor) AS "avg" FROM fict_sensors_syn where id_sensor=? and time_add >= now() - ?::INTERVAL
 					and time_add <= now() - ?::INTERVAL`, idSens, strconv.Itoa(i+1)+" day",
 			strconv.Itoa(i)+" day").Scan(&avgValue)
 
@@ -166,7 +166,7 @@ func dbGetWeek(idSens int, db *gorm.DB, ctx *gin.Context) {
 func dbGetMonth(idSens int, db *gorm.DB, ctx *gin.Context) {
 
 	for i := 0; i < 30; i++ {
-		db.Raw(`SELECT AVG(value_sensor) AS "avg" FROM sensors where id_sensor=? and time_add >= now() - ?::INTERVAL
+		db.Raw(`SELECT AVG(value_sensor) AS "avg" FROM fict_sensors_syn where id_sensor=? and time_add >= now() - ?::INTERVAL
 					and time_add <= now() - ?::INTERVAL`, idSens, strconv.Itoa(i+1)+" day",
 			strconv.Itoa(i)+" day").Scan(&avgValue)
 
@@ -185,7 +185,7 @@ func dbGetMonth(idSens int, db *gorm.DB, ctx *gin.Context) {
 func dbGetYear(idSens int, db *gorm.DB, ctx *gin.Context) {
 
 	for i := 0; i < 12; i++ {
-		db.Raw(`SELECT AVG(value_sensor) AS "avg" FROM sensors where id_sensor=? and time_add >= now() - ?::INTERVAL
+		db.Raw(`SELECT AVG(value_sensor) AS "avg" FROM fict_sensors_syn where id_sensor=? and time_add >= now() - ?::INTERVAL
 					and time_add <= now() - ?::INTERVAL`, idSens, strconv.Itoa(i+1)+" month",
 			strconv.Itoa(i)+" month").Scan(&avgValue)
 
