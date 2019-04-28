@@ -8,8 +8,10 @@ import (
 	"strings"
 )
 
-// main explores request for its HTTP-method and redirect it to appropriate function
-func main() {
+var portName = ":" + os.Getenv("PORT")
+
+// configRouter explores request for its HTTP-method and redirect it to appropriate function
+func configRouter() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.GET("/last", getLast)
@@ -19,7 +21,12 @@ func main() {
 	r.GET("/year", getYear)
 	r.POST(os.Getenv("SET"), postData)
 
-	portName := ":" + os.Getenv("PORT")
+	return r
+}
+
+// main runs server on selected port
+func main() {
+	r := configRouter()
 	err := r.Run(portName)
 
 	if err != nil {
@@ -136,6 +143,11 @@ func IsGetOk(ctx *gin.Context) bool {
 
 // ErrorResp return JSON in response body with 500 code as result of wrong request and error message which describes it
 func ErrorResp(ctx *gin.Context, err string) {
+	ctx.JSON(500, gin.H{"ErrorMSG": err})
+}
+
+// ErrorRespP is same as ErrorResp, but with panic
+func ErrorRespP(ctx *gin.Context, err string) {
 	ctx.JSON(500, gin.H{"ErrorMSG": err})
 	panic(err)
 }

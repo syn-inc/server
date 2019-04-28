@@ -30,6 +30,7 @@ type Avg struct {
 	Avg float64 `gorm:"column:avg"`
 }
 
+// variables for values from database
 var lastValue Sensor
 var avgArr []float64
 var avgValue Avg
@@ -135,8 +136,9 @@ func dbGetDay(idSens int, db *gorm.DB, ctx *gin.Context) {
 		// it is a feature! The resulting array will be used later for charts, so instead of breaking smooth line of
 		// curve it just repeats the last non-null value if it exist. Agree, maybe it's not the best solution, but for
 		// now we decided to leave things as they are, although they'll might be changed later.
-		//
+		// ::author @dedifferentiator
 		avgArr = append(avgArr, math.Round(avgValue.Avg*100)/100)
+		avgValue.Avg = 0
 	}
 
 	ctx.JSON(200, gin.H{
@@ -154,6 +156,7 @@ func dbGetWeek(idSens int, db *gorm.DB, ctx *gin.Context) {
 			strconv.Itoa(i)+" day").Scan(&avgValue)
 
 		avgArr = append(avgArr, math.Round(avgValue.Avg*100)/100)
+		avgValue.Avg = 0
 	}
 
 	ctx.JSON(200, gin.H{
@@ -171,6 +174,7 @@ func dbGetMonth(idSens int, db *gorm.DB, ctx *gin.Context) {
 			strconv.Itoa(i)+" day").Scan(&avgValue)
 
 		avgArr = append(avgArr, math.Round(avgValue.Avg*100)/100)
+		avgValue.Avg = 0
 	}
 
 	ctx.JSON(200, gin.H{
@@ -188,6 +192,7 @@ func dbGetYear(idSens int, db *gorm.DB, ctx *gin.Context) {
 			strconv.Itoa(i)+" month").Scan(&avgValue)
 
 		avgArr = append(avgArr, math.Round(avgValue.Avg*100)/100)
+		resetObjects()
 	}
 
 	ctx.JSON(200, gin.H{
