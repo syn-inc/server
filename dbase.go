@@ -39,14 +39,13 @@ var avgValue Avg
 func dbPostData(idSens int, valueSens float64, ctx *gin.Context) {
 	db, err := gorm.Open("postgres", configStr)
 	if err != nil {
-		ctx.JSON(500, gin.H{"ErrorMSG": err.Error()})
-		panic(err)
+		ErrorRespP()
 	}
 
 	defer func() {
 		flag := db.Close()
 		if flag != nil && err == nil {
-			panic(err)
+			ErrorRespP(ctx, err.Error())
 		}
 	}()
 
@@ -62,13 +61,13 @@ func dbGet(date string, ctx *gin.Context) {
 
 	db, err := gorm.Open("postgres", configStr)
 	if err != nil {
-		ErrorResp(ctx, err.Error())
+		ErrorRespP(ctx, err.Error())
 	}
 
 	defer func() {
 		flag := db.Close()
 		if flag != nil && err == nil {
-			ErrorResp(ctx, err.Error())
+			ErrorRespP(ctx, err.Error())
 		}
 	}()
 
