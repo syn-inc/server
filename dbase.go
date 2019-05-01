@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"math"
@@ -71,7 +70,6 @@ func dbGet(date string, ctx *gin.Context) {
 			ErrorRespP(ctx, err.Error())
 		}
 	}()
-	fmt.Println("Ok")
 
 	idSensRaw := ctx.Query("id")
 	idSens, _ := strconv.Atoi(idSensRaw)
@@ -144,19 +142,7 @@ func dbGetDay(idSens int, db *gorm.DB, ctx *gin.Context) {
 // dbGetWeek realizes query for average value for each of the last 7 days
 func dbGetWeek(idSens int, db *gorm.DB, ctx *gin.Context) {
 
-	err := db.DB().Ping()
-	if err != nil {
-		fmt.Println("CANNOT PING DB")
-	}
-
 	defer resetObjects()
-
-	type Tablename struct {
-		Data_directory string
-	}
-	var data_directory Tablename
-	db.Raw(`show data_directory;`).Scan(&data_directory)
-	fmt.Println(data_directory.Data_directory)
 
 	for i := 0; i < 7; i++ {
 		db.Raw(`SELECT AVG(value_sensor) AS "avg" FROM fict_sensors_syn where id_sensor=? and time_add >= now() 

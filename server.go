@@ -146,7 +146,7 @@ func ErrorResp(ctx *gin.Context, err string) {
 	ctx.JSON(500, gin.H{"ErrorMSG": err})
 }
 
-// ErrorRespP is same as ErrorResp, but with panic
+// ErrorRespP is the same as ErrorResp, but with panic
 func ErrorRespP(ctx *gin.Context, err string) {
 	ctx.JSON(500, gin.H{"ErrorMSG": err})
 	panic(err)
