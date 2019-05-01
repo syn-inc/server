@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"math"
@@ -39,7 +40,7 @@ var avgValue Avg
 func dbPostData(idSens int, valueSens float64, ctx *gin.Context) {
 	db, err := gorm.Open("postgres", configStr)
 	if err != nil {
-		ErrorRespP()
+		ErrorRespP(ctx, err.Error())
 	}
 
 	defer func() {
@@ -70,6 +71,7 @@ func dbGet(date string, ctx *gin.Context) {
 			ErrorRespP(ctx, err.Error())
 		}
 	}()
+	fmt.Println("Ok")
 
 	idSensRaw := ctx.Query("id")
 	idSens, _ := strconv.Atoi(idSensRaw)
@@ -131,11 +133,6 @@ func dbGetDay(idSens int, db *gorm.DB, ctx *gin.Context) {
 					- ?::INTERVAL and time_add <= now() - ?::INTERVAL`, idSens, strconv.Itoa(i+1)+" hour",
 			strconv.Itoa(i)+" hour").Scan(&avgValue)
 
-		// Firstly it looks like there's a bug here, avgValue.Avg is not clearing each iteration, but it's not a bug,
-		// it is a feature! The resulting array will be used later for charts, so instead of breaking smooth line of
-		// curve it just repeats the last non-null value if it exist. Agree, maybe it's not the best solution, but for
-		// now we decided to leave things as they are, although they'll might be changed later.
-		// ::author @dedifferentiator
 		avgArr = append(avgArr, math.Round(avgValue.Avg*100)/100)
 		avgValue.Avg = 0
 	}
@@ -147,7 +144,19 @@ func dbGetDay(idSens int, db *gorm.DB, ctx *gin.Context) {
 // dbGetWeek realizes query for average value for each of the last 7 days
 func dbGetWeek(idSens int, db *gorm.DB, ctx *gin.Context) {
 
+	err := db.DB().Ping()
+	if err != nil {
+		fmt.Println("CANNOT PING DB")
+	}
+
 	defer resetObjects()
+
+	type Tablename struct {
+		Data_directory string
+	}
+	var data_directory Tablename
+	db.Raw(`show data_directory;`).Scan(&data_directory)
+	fmt.Println(data_directory.Data_directory)
 
 	for i := 0; i < 7; i++ {
 		db.Raw(`SELECT AVG(value_sensor) AS "avg" FROM fict_sensors_syn where id_sensor=? and time_add >= now() - ?::INTERVAL
