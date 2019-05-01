@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -151,4 +152,84 @@ func TestGetYear1(t *testing.T) {
 
 	assert.Equal(t, 200, w.Code)
 	assert.Equal(t, `{"ErrorMSG":"","values":[23.93,50,62.48,0,50.5,0,87.1,0,0,0,29.39,3.6]}`, w.Body.String())
+}
+
+// TestPost tests POST-data request
+func TestPost(t *testing.T) {
+
+	db, err := gorm.Open("postgres", configTestDB)
+	if err != nil {
+		panic("Cannot open connection to test database")
+	}
+
+	defer func() {
+		flag := db.Close()
+		if flag != nil && err == nil {
+			panic("Cannot close connection to test database")
+		}
+	}()
+
+	router := configRouter()
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("POST", "/"+set+"?id=1&value=21.01", nil)
+	router.ServeHTTP(w, req)
+
+	var sensValue Sensor
+	db.Raw(`SELECT id_sensor, value_sensor FROM fict_sensors_syn WHERE id_sensor=1 ORDER BY id DESC LIMIT 
+			     1`).Scan(&sensValue)
+
+	assert.Equal(t, 200, w.Code)
+	assert.Equal(t, `{"ErrorMSG":""}`, w.Body.String())
+	assert.Equal(t, 0, sensValue.Id)
+	assert.Equal(t, 1, sensValue.IdSensor)
+	assert.Equal(t, 21.01, math.Round(sensValue.ValueSensor*100)/100)
+}
+
+// TestError404N1 tests wrong path for GET-request
+func TestError404N1(t *testing.T) {
+	router := configRouter()
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("GET", "/fff?id=2", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 404, w.Code)
+	assert.Equal(t, `404 page not found`, w.Body.String())
+}
+
+// TestError404N2 tests wrong path for POST-request
+func TestError404N2(t *testing.T) {
+	router := configRouter()
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("POST", "/fff?id=2", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 404, w.Code)
+	assert.Equal(t, `404 page not found`, w.Body.String())
+}
+
+// TestError404N1 tests lack of arguments for GET-request
+func TestError500N1(t *testing.T) {
+	router := configRouter()
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("GET", "/last", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 500, w.Code)
+	assert.Equal(t, `{"ErrorMSG":""}{"ErrorMSG":"Incorrect params"}`, w.Body.String())
+}
+
+// TestError500N2 tests lack of arguments for POST-request
+func TestError500N2(t *testing.T) {
+	router := configRouter()
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("POST", "/"+set, nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 500, w.Code)
+	assert.Equal(t, `{"ErrorMSG":"Incorrect params"}`, w.Body.String())
 }

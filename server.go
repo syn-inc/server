@@ -9,6 +9,7 @@ import (
 )
 
 var portName = ":" + os.Getenv("PORT")
+var set = os.Getenv("SET")
 
 // configRouter explores request for its HTTP-method and redirect it to appropriate function
 func configRouter() *gin.Engine {
@@ -19,7 +20,7 @@ func configRouter() *gin.Engine {
 	r.GET("/week", getWeek)
 	r.GET("/month", getMonth)
 	r.GET("/year", getYear)
-	r.POST(os.Getenv("SET"), postData)
+	r.POST(set, postData)
 
 	return r
 }
@@ -98,25 +99,25 @@ func getYear(ctx *gin.Context) {
 func IsSetOk(idSens, valueSens string, ctx *gin.Context) bool {
 
 	if strings.Contains(idSens, "Inf") || strings.Contains(idSens, "NaN") {
-		ErrorResp(ctx, "")
+		ErrorResp(ctx, "Incorrect params")
 		return false
 	}
 
 	if strings.Contains(valueSens, "Inf") || strings.Contains(valueSens, "NaN") {
-		ErrorResp(ctx, "")
+		ErrorResp(ctx, "Incorrect params")
 		return false
 	}
 
 	keyVal, err := strconv.Atoi(idSens)
 	if err != nil || keyVal <= 0 {
-		ErrorResp(ctx, "")
+		ErrorResp(ctx, "Incorrect params")
 		return false
 	}
 
 	_, err = strconv.ParseFloat(valueSens, 64)
 
 	if err != nil {
-		ErrorResp(ctx, "")
+		ErrorResp(ctx, "Incorrect params")
 		return false
 	}
 	return true
