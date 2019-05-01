@@ -89,7 +89,7 @@ func dbGet(date string, ctx *gin.Context) {
 		dbGetYear(idSens, db, ctx)
 	default:
 		ctx.JSON(404, gin.H{
-			"ErrorMSG": ""})
+			"ErrorMSG": "404"})
 	}
 }
 
@@ -200,7 +200,7 @@ func dbGetYear(idSens int, db *gorm.DB, ctx *gin.Context) {
 			strconv.Itoa(i)+" month").Scan(&avgValue)
 
 		avgArr = append(avgArr, math.Round(avgValue.Avg*100)/100)
-		resetObjects()
+		avgValue.Avg = 0
 	}
 
 	ctx.JSON(200, gin.H{
