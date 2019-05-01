@@ -19,7 +19,7 @@ Period might be only among these values - `"last", "day", "week", "month", "year
 - **month** - average values for each of the last 30 days
 - **year** - average values for each of the last 12 months
 
-##Available sensors
+## Available sensors
  **ID - DECRYPTION**
 
 
