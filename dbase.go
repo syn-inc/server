@@ -11,7 +11,7 @@ import (
 )
 
 // URL for connection to database
-var configStr = os.Getenv("URL")
+var configDB = os.Getenv("URL")
 
 // Sensor struct describes basic object for work with database
 type Sensor struct {
@@ -38,7 +38,7 @@ var avgValue Avg
 
 // dbPostData insert new data into table
 func dbPostData(idSens int, valueSens float64, ctx *gin.Context) {
-	db, err := gorm.Open("postgres", configStr)
+	db, err := gorm.Open("postgres", configDB)
 	if err != nil {
 		ErrorRespP(ctx, err.Error())
 	}
@@ -60,7 +60,7 @@ func dbPostData(idSens int, valueSens float64, ctx *gin.Context) {
 // dbGet provides connection to database and connects each kind of request with appropriate query
 func dbGet(date string, ctx *gin.Context) {
 
-	db, err := gorm.Open("postgres", configStr)
+	db, err := gorm.Open("postgres", configDB)
 	if err != nil {
 		ErrorRespP(ctx, err.Error())
 	}
@@ -159,8 +159,8 @@ func dbGetWeek(idSens int, db *gorm.DB, ctx *gin.Context) {
 	fmt.Println(data_directory.Data_directory)
 
 	for i := 0; i < 7; i++ {
-		db.Raw(`SELECT AVG(value_sensor) AS "avg" FROM fict_sensors_syn where id_sensor=? and time_add >= now() - ?::INTERVAL
-					and time_add <= now() - ?::INTERVAL`, idSens, strconv.Itoa(i+1)+" day",
+		db.Raw(`SELECT AVG(value_sensor) AS "avg" FROM fict_sensors_syn where id_sensor=? and time_add >= now() 
+					- ?::INTERVAL and time_add <= now() - ?::INTERVAL`, idSens, strconv.Itoa(i+1)+" day",
 			strconv.Itoa(i)+" day").Scan(&avgValue)
 
 		avgArr = append(avgArr, math.Round(avgValue.Avg*100)/100)
