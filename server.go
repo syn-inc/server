@@ -21,6 +21,9 @@ func configRouter() *gin.Engine {
 	r.GET("/month", getMonth)
 	r.GET("/year", getYear)
 	r.POST(set, postData)
+	r.NoRoute(func(ctx *gin.Context) {
+		ctx.JSON(404, gin.H{"ErrorMSG": "404"})
+	})
 
 	return r
 }
@@ -54,8 +57,6 @@ func postData(ctx *gin.Context) {
 func getLast(ctx *gin.Context) {
 	if IsGetOk(ctx) {
 		dbGet("last", ctx)
-	} else {
-		ctx.JSON(500, gin.H{"ErrorMSG": "Incorrect params"})
 	}
 }
 
@@ -63,8 +64,6 @@ func getLast(ctx *gin.Context) {
 func getDay(ctx *gin.Context) {
 	if IsGetOk(ctx) {
 		dbGet("day", ctx)
-	} else {
-		ctx.JSON(500, gin.H{"ErrorMSG": "Incorrect params"})
 	}
 }
 
@@ -72,8 +71,6 @@ func getDay(ctx *gin.Context) {
 func getWeek(ctx *gin.Context) {
 	if IsGetOk(ctx) {
 		dbGet("week", ctx)
-	} else {
-		ctx.JSON(500, gin.H{"ErrorMSG": "Incorrect params"})
 	}
 }
 
@@ -81,8 +78,6 @@ func getWeek(ctx *gin.Context) {
 func getMonth(ctx *gin.Context) {
 	if IsGetOk(ctx) {
 		dbGet("month", ctx)
-	} else {
-		ctx.JSON(500, gin.H{"ErrorMSG": "Incorrect params"})
 	}
 }
 
@@ -90,35 +85,32 @@ func getMonth(ctx *gin.Context) {
 func getYear(ctx *gin.Context) {
 	if IsGetOk(ctx) {
 		dbGet("year", ctx)
-	} else {
-		ctx.JSON(500, gin.H{"ErrorMSG": "Incorrect params"})
 	}
 }
 
 // IsSetOk Checks set-request for its correctness
-func IsSetOk(idSens, valueSens string, ctx *gin.Context) bool {
+func IsSetOk(idSens, valueSens string, ctx *gin.Context) (false bool) {
 
-	if strings.Contains(idSens, "Inf") || strings.Contains(idSens, "NaN") {
-		ErrorResp(ctx, "Incorrect params")
-		return false
-	}
+	falseStruct := []string{"Inf", "NaN"}
 
-	if strings.Contains(valueSens, "Inf") || strings.Contains(valueSens, "NaN") {
-		ErrorResp(ctx, "Incorrect params")
-		return false
+	for _, value := range falseStruct {
+		if strings.Contains(idSens, value) || strings.Contains(valueSens, value) {
+			ErrorResp(ctx, "Incorrect params")
+			return
+		}
 	}
 
 	keyVal, err := strconv.Atoi(idSens)
 	if err != nil || keyVal <= 0 {
 		ErrorResp(ctx, "Incorrect params")
-		return false
+		return
 	}
 
 	_, err = strconv.ParseFloat(valueSens, 64)
 
 	if err != nil {
 		ErrorResp(ctx, "Incorrect params")
-		return false
+		return
 	}
 	return true
 }
@@ -129,14 +121,14 @@ func IsGetOk(ctx *gin.Context) bool {
 	idSens := ctx.Query("id")
 
 	if strings.Contains(idSens, "Inf") || strings.Contains(idSens, "NaN") {
-		ErrorResp(ctx, "")
+		ErrorResp(ctx, "Incorrect params")
 		return false
 	}
 
 	keyVal, err := strconv.Atoi(idSens)
 
 	if err != nil || keyVal <= 0 {
-		ErrorResp(ctx, "")
+		ErrorResp(ctx, "Incorrect params")
 		return false
 	}
 	return true
@@ -145,10 +137,4 @@ func IsGetOk(ctx *gin.Context) bool {
 // ErrorResp return JSON in response body with 500 code as result of wrong request and error message which describes it
 func ErrorResp(ctx *gin.Context, err string) {
 	ctx.JSON(500, gin.H{"ErrorMSG": err})
-}
-
-// ErrorRespP is the same as ErrorResp, but with panic
-func ErrorRespP(ctx *gin.Context, err string) {
-	ctx.JSON(500, gin.H{"ErrorMSG": err})
-	panic(err)
 }

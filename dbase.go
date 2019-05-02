@@ -39,13 +39,15 @@ var avgValue Avg
 func dbPostData(idSens int, valueSens float64, ctx *gin.Context) {
 	db, err := gorm.Open("postgres", configDB)
 	if err != nil {
-		ErrorRespP(ctx, err.Error())
+		ErrorResp(ctx, err.Error())
+		return
 	}
 
 	defer func() {
 		flag := db.Close()
 		if flag != nil && err == nil {
-			ErrorRespP(ctx, err.Error())
+			ErrorResp(ctx, err.Error())
+			return
 		}
 	}()
 
@@ -61,13 +63,14 @@ func dbGet(date string, ctx *gin.Context) {
 
 	db, err := gorm.Open("postgres", configDB)
 	if err != nil {
-		ErrorRespP(ctx, err.Error())
+		ErrorResp(ctx, err.Error())
+		return
 	}
 
 	defer func() {
 		flag := db.Close()
 		if flag != nil && err == nil {
-			ErrorRespP(ctx, err.Error())
+			ErrorResp(ctx, err.Error())
 		}
 	}()
 
@@ -96,8 +99,8 @@ func dbGetLast(idSens int, db *gorm.DB, ctx *gin.Context) {
 
 	defer resetObjects()
 
-	db.Raw(`SELECT value_sensor FROM fict_sensors_syn where id_sensor=? order by id desc limit 1;`,
-		idSens).Scan(&lastValue)
+	db.Where(Sensor{IdSensor: idSens}).Order("id desc").Limit(1).First(&lastValue)
+
 	ctx.JSON(200, gin.H{
 		"ErrorMSG": "", "values": math.Round(lastValue.ValueSensor*100) / 100})
 }
@@ -194,9 +197,8 @@ func dbGetYear(idSens int, db *gorm.DB, ctx *gin.Context) {
 }
 
 // resetObjects clear variables in dbGet... functions since they (variables) are in the outer scope and may not be
-// overwritten due to the lack of a non-zero query result
+// overwritten due to a zero query result
 func resetObjects() {
 	lastValue.ValueSensor = 0
-	avgValue.Avg = 0
 	avgArr = []float64{}
 }

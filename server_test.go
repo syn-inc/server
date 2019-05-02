@@ -154,7 +154,7 @@ func TestGetYear1(t *testing.T) {
 	assert.Equal(t, `{"ErrorMSG":"","values":[23.93,50,62.48,0,50.5,0,87.1,0,0,0,29.39,3.6]}`, w.Body.String())
 }
 
-// TestPost tests POST-data request
+// TestPost tests dbPostData request
 func TestPost(t *testing.T) {
 
 	db, err := gorm.Open("postgres", configTestDB)
@@ -195,7 +195,7 @@ func TestError404N1(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 404, w.Code)
-	assert.Equal(t, `404 page not found`, w.Body.String())
+	assert.Equal(t, `{"ErrorMSG":"404"}`, w.Body.String())
 }
 
 // TestError404N2 tests wrong path for POST-request
@@ -207,7 +207,7 @@ func TestError404N2(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 404, w.Code)
-	assert.Equal(t, `404 page not found`, w.Body.String())
+	assert.Equal(t, `{"ErrorMSG":"404"}`, w.Body.String())
 }
 
 // TestError404N1 tests lack of arguments for GET-request
@@ -219,7 +219,7 @@ func TestError500N1(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 500, w.Code)
-	assert.Equal(t, `{"ErrorMSG":""}{"ErrorMSG":"Incorrect params"}`, w.Body.String())
+	assert.Equal(t, `{"ErrorMSG":"Incorrect params"}`, w.Body.String())
 }
 
 // TestError500N2 tests lack of arguments for POST-request
@@ -232,4 +232,18 @@ func TestError500N2(t *testing.T) {
 
 	assert.Equal(t, 500, w.Code)
 	assert.Equal(t, `{"ErrorMSG":"Incorrect params"}`, w.Body.String())
+}
+
+// TestDbPostData testing dbPostData func
+func TestDbPostData(t *testing.T) {
+	configDB = "host=localhost port=5433 user=postgres dbname=WRONG-NAME password=PASSWORD sslmode=disable"
+
+	router := configRouter()
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("POST", "/"+set+"?id=1&value=20.06", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 500, w.Code)
+	assert.NotEqual(t, `{"ErrorMSG":""}`, w.Body.String())
 }
