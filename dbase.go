@@ -88,6 +88,8 @@ func dbGet(date string, ctx *gin.Context) {
 		dbGetMonth(idSens, db, ctx)
 	case "year":
 		dbGetYear(idSens, db, ctx)
+
+	// this default value is unreachable, but it's worth to leave it in case future architecture change
 	default:
 		ctx.JSON(404, gin.H{
 			"ErrorMSG": "404"})

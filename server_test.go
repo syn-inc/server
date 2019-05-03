@@ -1,13 +1,16 @@
 package main
 
 import (
-	"github.com/jinzhu/gorm"
-	"github.com/stretchr/testify/assert"
+	"encoding/json"
 	"math"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/stretchr/testify/assert"
 )
 
 // URL for connection to test database, should be the same as configDB
@@ -244,6 +247,73 @@ func TestDbPostData(t *testing.T) {
 	req, _ := http.NewRequest("POST", "/"+set+"?id=1&value=20.06", nil)
 	router.ServeHTTP(w, req)
 
+	type Resp struct {
+		ErrorMSG string
+	}
+	var responseRes Resp
+	// decoding json from response body to check that there is no error in ErrorMSG
+	err := json.NewDecoder(w.Body).Decode(&responseRes)
+	if err != nil {
+		panic("Cannot decode JSON from body of response")
+	}
+
 	assert.Equal(t, 500, w.Code)
-	assert.NotEqual(t, `{"ErrorMSG":""}`, w.Body.String())
+	assert.NotEqual(t, "", responseRes.ErrorMSG)
+}
+
+// TestDbGetData testing dbPostData func with wrong connection URL
+func TestDbGet(t *testing.T) {
+	configDB = "host=localhost port=5433 user=postgres dbname=WRONG-NAME password=PASSWORD sslmode=disable"
+
+	router := configRouter()
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("GET", "/last?id=1", nil)
+	router.ServeHTTP(w, req)
+
+	type Resp struct {
+		ErrorMSG string
+	}
+	var responseRes Resp
+	// decoding json from response body to check that there is no error in ErrorMSG
+	err := json.NewDecoder(w.Body).Decode(&responseRes)
+	if err != nil {
+		panic("Cannot decode JSON from body of response")
+	}
+	assert.Equal(t, 500, w.Code)
+	assert.NotEqual(t, "", responseRes.ErrorMSG)
+}
+
+// TestIsGetOk testing IsGetOk func with wrong arguments in request
+func TestIsGetOk(t *testing.T) {
+	router := configRouter()
+
+	requests := [...]string{"/last?id=k", "/last?id=Inf", "/last?id=NaN", "/last?id=-1", "/last?id=0", "/last?id=1.2"}
+
+	for _, val := range requests {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", val, nil)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, 500, w.Code)
+		assert.Equal(t, `{"ErrorMSG":"Incorrect params"}`, w.Body.String())
+	}
+}
+
+// TestIsSetOk testing IsSetOk func with wrong arguments in request
+func TestIsSetOk(t *testing.T) {
+	router := configRouter()
+
+	requests := [...]string{"/" + set + "?id=1&value=Inf", "/" + set + "?id=-1&value=23", "/" + set + "?id=&value=1",
+		"/" + set + "?id=Inf&value=1", "/" + set + "?id=1&value=", "/" + set + "?id=Inf&value=", "/" + set + "?id=NaN&value=1",
+		"/" + set + "?id=1&value=NaN", "/" + set + "?id=NaN&value=NaN", "/" + set + "?id=NaN&value=NaN"}
+
+	for _, val := range requests {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", val, nil)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, 500, w.Code)
+		assert.Equal(t, `{"ErrorMSG":"Incorrect params"}`, w.Body.String())
+	}
 }
