@@ -8,18 +8,21 @@ import (
 	"strings"
 )
 
+// portName defines port which app should open
 var portName = ":" + os.Getenv("PORT")
+
+// set defines path for postData request
 var set = os.Getenv("SET")
 
 // configRouter explores request for its HTTP-method and redirect it to appropriate function
 func configRouter() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
-	r.GET("/last", getLast)
-	r.GET("/day", getDay)
-	r.GET("/week", getWeek)
-	r.GET("/month", getMonth)
-	r.GET("/year", getYear)
+	r.GET("last", getPeriod)
+	r.GET("day", getPeriod)
+	r.GET("week", getPeriod)
+	r.GET("month", getPeriod)
+	r.GET("year", getPeriod)
 	r.POST(set, postData)
 	r.NoRoute(func(ctx *gin.Context) {
 		ctx.JSON(404, gin.H{"ErrorMSG": "404"})
@@ -38,7 +41,7 @@ func main() {
 	}
 }
 
-// postData test validness of request
+// postData tests validness of request
 func postData(ctx *gin.Context) {
 
 	idSensRaw := ctx.Query("id")
@@ -50,66 +53,41 @@ func postData(ctx *gin.Context) {
 		idSens, _ := strconv.Atoi(idSensRaw)
 		valueSens, _ := strconv.ParseFloat(valueSensRaw, 64)
 		dbPostData(idSens, valueSens, ctx)
+	} else {
+		ErrorResp(ctx, "Incorrect params")
 	}
 }
 
-// getLast test validness of request
-func getLast(ctx *gin.Context) {
+// getPeriod  validness of request
+func getPeriod(ctx *gin.Context) {
 	if IsGetOk(ctx) {
-		dbGet("last", ctx)
-	}
-}
-
-// getDay test validness of request
-func getDay(ctx *gin.Context) {
-	if IsGetOk(ctx) {
-		dbGet("day", ctx)
-	}
-}
-
-// getWeek test validness of request
-func getWeek(ctx *gin.Context) {
-	if IsGetOk(ctx) {
-		dbGet("week", ctx)
-	}
-}
-
-// getMonth test validness of request
-func getMonth(ctx *gin.Context) {
-	if IsGetOk(ctx) {
-		dbGet("month", ctx)
-	}
-}
-
-// getYear test validness of request
-func getYear(ctx *gin.Context) {
-	if IsGetOk(ctx) {
-		dbGet("year", ctx)
+		// [1:] omits backslash
+		dbGet(ctx.Request.URL.Path[1:], ctx)
+	} else {
+		ErrorResp(ctx, "Incorrect params")
 	}
 }
 
 // IsSetOk Checks set-request for its correctness
 func IsSetOk(idSens, valueSens string, ctx *gin.Context) (false bool) {
 
+	// values which idSens and valueSens should not contain
 	falseStruct := []string{"Inf", "NaN"}
 
 	for _, value := range falseStruct {
 		if strings.Contains(idSens, value) || strings.Contains(valueSens, value) {
-			ErrorResp(ctx, "Incorrect params")
 			return
 		}
 	}
 
 	keyVal, err := strconv.Atoi(idSens)
 	if err != nil || keyVal <= 0 {
-		ErrorResp(ctx, "Incorrect params")
 		return
 	}
 
 	_, err = strconv.ParseFloat(valueSens, 64)
 
 	if err != nil {
-		ErrorResp(ctx, "Incorrect params")
 		return
 	}
 	return true
@@ -121,14 +99,12 @@ func IsGetOk(ctx *gin.Context) bool {
 	idSens := ctx.Query("id")
 
 	if strings.Contains(idSens, "Inf") || strings.Contains(idSens, "NaN") {
-		ErrorResp(ctx, "Incorrect params")
 		return false
 	}
 
 	keyVal, err := strconv.Atoi(idSens)
 
 	if err != nil || keyVal <= 0 {
-		ErrorResp(ctx, "Incorrect params")
 		return false
 	}
 	return true

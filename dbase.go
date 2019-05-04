@@ -14,8 +14,8 @@ var configDB = os.Getenv("URL")
 
 // Sensor struct describes basic object for work with database
 type Sensor struct {
-	Id          int       `gorm:"column:id; serial"`
-	IdSensor    int       `gorm:"column:id_sensor; type:integer; not null"`
+	ID          int       `gorm:"column:id; serial"`
+	IDSensor    int       `gorm:"column:id_sensor; type:integer; not null"`
 	ValueSensor float64   `gorm:"column:value_sensor; type float(2); not null"`
 	TimeAdd     time.Time `gorm:"column:time_add; type:timestamp; not null"`
 }
@@ -51,7 +51,7 @@ func dbPostData(idSens int, valueSens float64, ctx *gin.Context) {
 		}
 	}()
 
-	sensor := Sensor{IdSensor: idSens, ValueSensor: valueSens, TimeAdd: time.Now()}
+	sensor := Sensor{IDSensor: idSens, ValueSensor: valueSens, TimeAdd: time.Now()}
 	db.Create(&sensor)
 
 	ctx.JSON(200, gin.H{
@@ -101,7 +101,7 @@ func dbGetLast(idSens int, db *gorm.DB, ctx *gin.Context) {
 
 	defer resetObjects()
 
-	db.Where(Sensor{IdSensor: idSens}).Order("id desc").Limit(1).First(&lastValue)
+	db.Where(Sensor{IDSensor: idSens}).Order("id desc").Limit(1).First(&lastValue)
 
 	ctx.JSON(200, gin.H{
 		"ErrorMSG": "", "values": math.Round(lastValue.ValueSensor*100) / 100})
@@ -180,7 +180,7 @@ func dbGetMonth(idSens int, db *gorm.DB, ctx *gin.Context) {
 		"ErrorMSG": "", "values": avgArr})
 }
 
-// dbGetYear realizes query for average value for each of the last 12 month
+// dbGetYear realizes query for average value for each of the last 12 months
 func dbGetYear(idSens int, db *gorm.DB, ctx *gin.Context) {
 
 	defer resetObjects()

@@ -73,8 +73,8 @@ func TestMain(m *testing.M) {
 	os.Exit(testCode)
 }
 
-// TestGetLast1 tests GET-last request
-func TestGetLast1(t *testing.T) {
+// TestGetLast tests GET-last request
+func TestGetLast(t *testing.T) {
 	router := configRouter()
 	w := httptest.NewRecorder()
 
@@ -85,8 +85,8 @@ func TestGetLast1(t *testing.T) {
 	assert.Equal(t, `{"ErrorMSG":"","values":3.6}`, w.Body.String())
 }
 
-// TestGetWeek1 tests GET-day request
-func TestGetDay1(t *testing.T) {
+// TestGetWeek tests GET-day request
+func TestGetDay(t *testing.T) {
 	router := configRouter()
 	w := httptest.NewRecorder()
 
@@ -94,46 +94,31 @@ func TestGetDay1(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, `{"ErrorMSG":"","values":[1,0,2.5,0,4.5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0]}`, w.Body.String())
+	assert.Equal(t, `{"ErrorMSG":"","values":[1,0,2.5,0,4.5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0]}`,
+		w.Body.String())
 }
 
-// TestGetWeek1 tests GET-week request
-func TestGetWeek1(t *testing.T) {
+// TestGetWeek tests GET-week request
+func TestGetWeek(t *testing.T) {
 
 	router := configRouter()
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/week?id=1", nil)
-	router.ServeHTTP(w, req)
 
-	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, `{"ErrorMSG":"","values":[3.17,0,0,4.5,5,0,0]}`, w.Body.String())
+	comparison := map[string]string{"/week?id=1": `{"ErrorMSG":"","values":[3.17,0,0,4.5,5,0,0]}`,
+		"/week?id=2": `{"ErrorMSG":"","values":[0,0,10.13,11,50.02,0,14.01]}`,
+		"/week?id=3": `{"ErrorMSG":"","values":[0,0,0,0,0,0,0]}`}
+
+	for key, value := range comparison {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", key, nil)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, 200, w.Code)
+		assert.Equal(t, value, w.Body.String())
+	}
 }
 
-// TestGetWeek2 tests GET-week request
-func TestGetWeek2(t *testing.T) {
-	router := configRouter()
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/week?id=2", nil)
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, `{"ErrorMSG":"","values":[0,0,10.13,11,50.02,0,14.01]}`, w.Body.String())
-}
-
-// TestGetWeek3 tests GET-week request
-func TestGetWeek3(t *testing.T) {
-	router := configRouter()
-	w := httptest.NewRecorder()
-
-	req, _ := http.NewRequest("GET", "/week?id=3", nil)
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, `{"ErrorMSG":"","values":[0,0,0,0,0,0,0]}`, w.Body.String())
-}
-
-// TestGetMonth1 tests GET-month request
-func TestGetMonth1(t *testing.T) {
+// TestGetMonth tests GET-month request
+func TestGetMonth(t *testing.T) {
 	router := configRouter()
 	w := httptest.NewRecorder()
 
@@ -145,8 +130,8 @@ func TestGetMonth1(t *testing.T) {
 		`13.5,0,0,0,0,0,0,0,0,0]}`, w.Body.String())
 }
 
-// TestGetYear1 test GET-year request
-func TestGetYear1(t *testing.T) {
+// TestGetYear tests GET-year request
+func TestGetYear(t *testing.T) {
 	router := configRouter()
 	w := httptest.NewRecorder()
 
@@ -184,72 +169,61 @@ func TestPost(t *testing.T) {
 
 	assert.Equal(t, 200, w.Code)
 	assert.Equal(t, `{"ErrorMSG":""}`, w.Body.String())
-	assert.Equal(t, 0, sensValue.Id)
-	assert.Equal(t, 1, sensValue.IdSensor)
+	assert.Equal(t, 0, sensValue.ID)
+	assert.Equal(t, 1, sensValue.IDSensor)
 	assert.Equal(t, 21.01, math.Round(sensValue.ValueSensor*100)/100)
 }
 
-// TestError404N1 tests wrong path for GET-request
-func TestError404N1(t *testing.T) {
+// TestError404 tests wrong path for GET/POST-request
+func TestError404(t *testing.T) {
 	router := configRouter()
-	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("GET", "/fff?id=2", nil)
-	router.ServeHTTP(w, req)
+	methods := []string{"GET", "POST"}
+	requests := []string{"/fff?id=2", "/Last?id=2", "/YEAR?id=2", "/111?id=2", "/?id=2", "/lastweek?id=2"}
 
-	assert.Equal(t, 404, w.Code)
-	assert.Equal(t, `{"ErrorMSG":"404"}`, w.Body.String())
+	for _, method := range methods {
+		for _, request := range requests {
+
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest(method, request, nil)
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, 404, w.Code)
+			assert.Equal(t, `{"ErrorMSG":"404"}`, w.Body.String())
+		}
+	}
 }
 
-// TestError404N2 tests wrong path for POST-request
-func TestError404N2(t *testing.T) {
+// TestError500 tests lack of arguments for GET/POST-request
+func TestError500(t *testing.T) {
 	router := configRouter()
-	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("POST", "/fff?id=2", nil)
-	router.ServeHTTP(w, req)
+	comparison := map[string]string{"GET": "/last", "POST": "/" + set}
 
-	assert.Equal(t, 404, w.Code)
-	assert.Equal(t, `{"ErrorMSG":"404"}`, w.Body.String())
+	for key, value := range comparison {
+		w := httptest.NewRecorder()
+
+		req, _ := http.NewRequest(key, value, nil)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, 500, w.Code)
+		assert.Equal(t, `{"ErrorMSG":"Incorrect params"}`, w.Body.String())
+	}
 }
 
-// TestError404N1 tests lack of arguments for GET-request
-func TestError500N1(t *testing.T) {
-	router := configRouter()
-	w := httptest.NewRecorder()
-
-	req, _ := http.NewRequest("GET", "/last", nil)
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, 500, w.Code)
-	assert.Equal(t, `{"ErrorMSG":"Incorrect params"}`, w.Body.String())
-}
-
-// TestError500N2 tests lack of arguments for POST-request
-func TestError500N2(t *testing.T) {
-	router := configRouter()
-	w := httptest.NewRecorder()
-
-	req, _ := http.NewRequest("POST", "/"+set, nil)
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, 500, w.Code)
-	assert.Equal(t, `{"ErrorMSG":"Incorrect params"}`, w.Body.String())
-}
-
-// TestDbPostData testing dbPostData func
+// TestDbPostData tests dbPostData func
 func TestDbPostData(t *testing.T) {
 	configDB = "host=localhost port=5433 user=postgres dbname=WRONG-NAME password=PASSWORD sslmode=disable"
 
 	router := configRouter()
 	w := httptest.NewRecorder()
-
 	req, _ := http.NewRequest("POST", "/"+set+"?id=1&value=20.06", nil)
 	router.ServeHTTP(w, req)
 
 	type Resp struct {
 		ErrorMSG string
 	}
+
 	var responseRes Resp
 	// decoding json from response body to check that there is no error in ErrorMSG
 	err := json.NewDecoder(w.Body).Decode(&responseRes)
@@ -261,7 +235,7 @@ func TestDbPostData(t *testing.T) {
 	assert.NotEqual(t, "", responseRes.ErrorMSG)
 }
 
-// TestDbGetData testing dbPostData func with wrong connection URL
+// TestDbGetData tests dbPostData func with wrong connection URL
 func TestDbGet(t *testing.T) {
 	configDB = "host=localhost port=5433 user=postgres dbname=WRONG-NAME password=PASSWORD sslmode=disable"
 
@@ -284,7 +258,7 @@ func TestDbGet(t *testing.T) {
 	assert.NotEqual(t, "", responseRes.ErrorMSG)
 }
 
-// TestIsGetOk testing IsGetOk func with wrong arguments in request
+// TestIsGetOk tests IsGetOk func with wrong arguments in request
 func TestIsGetOk(t *testing.T) {
 	router := configRouter()
 
@@ -300,13 +274,14 @@ func TestIsGetOk(t *testing.T) {
 	}
 }
 
-// TestIsSetOk testing IsSetOk func with wrong arguments in request
+// TestIsSetOk tests IsSetOk func with wrong arguments in request
 func TestIsSetOk(t *testing.T) {
 	router := configRouter()
 
 	requests := [...]string{"/" + set + "?id=1&value=Inf", "/" + set + "?id=-1&value=23", "/" + set + "?id=&value=1",
-		"/" + set + "?id=Inf&value=1", "/" + set + "?id=1&value=", "/" + set + "?id=Inf&value=", "/" + set + "?id=NaN&value=1",
-		"/" + set + "?id=1&value=NaN", "/" + set + "?id=NaN&value=NaN", "/" + set + "?id=NaN&value=NaN"}
+		"/" + set + "?id=Inf&value=1", "/" + set + "?id=1&value=", "/" + set + "?id=Inf&value=", "/" + set +
+		"?id=NaN&value=1", "/" + set + "?id=1&value=NaN", "/" + set + "?id=NaN&value=NaN", "/" + set +
+		"?id=NaN&value=NaN"}
 
 	for _, val := range requests {
 		w := httptest.NewRecorder()
