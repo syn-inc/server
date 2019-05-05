@@ -94,18 +94,18 @@ func IsSetOk(idSens, valueSens string, ctx *gin.Context) (false bool) {
 }
 
 // IsGetOk test get-request
-func IsGetOk(ctx *gin.Context) bool {
+func IsGetOk(ctx *gin.Context) (false bool) {
 
 	idSens := ctx.Query("id")
 
 	if strings.Contains(idSens, "Inf") || strings.Contains(idSens, "NaN") {
-		return false
+		return
 	}
 
 	keyVal, err := strconv.Atoi(idSens)
 
 	if err != nil || keyVal <= 0 {
-		return false
+		return
 	}
 	return true
 }
