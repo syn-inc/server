@@ -31,45 +31,44 @@ func TestMain(m *testing.M) {
 		}
 	}()
 
-	db.Exec(`CREATE TABLE fict_sensors_syn(id serial primary key, id_sensor integer not null, value_sensor float(2)
-				 not null, time_add timestamp not null); INSERT INTO fict_sensors_syn(id_sensor, value_sensor,
- 				 time_add) VALUES (1, 1, now()),
-                                  (1, 2, now() - '2 hour'::INTERVAL),
-							      (1, 3, now() - '2 hour'::INTERVAL),
-								  (1, 4, now() - '4 hour'::INTERVAL),
-								  (1, 5, now() - '4 hour'::INTERVAL),
-								  (1, 4, now() - '22 hour'::INTERVAL),
-								  (1, 5, now() - '3 day'::INTERVAL),
-								  (1, 4, now() - '3 day'::INTERVAL),
-								  (1, 5, now() - '4 day'::INTERVAL),
- 
-								  (2, 10, now() - '2 day'::INTERVAL),
-								  (2, 10.25, now() - '2 day'::INTERVAL),
-								  (2, 11, now() - '3 day'::INTERVAL),
-								  (2, 13.99, now() - '4 day'::INTERVAL),
-								  (2, 95.56, now() - '4 day'::INTERVAL),
-								  (2, 60.35, now() - '4 day'::INTERVAL),
-								  (2, 30.20, now() - '4 day'::INTERVAL),
-								  (2, 14.01, now() - '6 day'::INTERVAL),
-
-								  (2, 15.67, now() - '7 day'::INTERVAL),
-								  (2, 11.00, now() - '14 day'::INTERVAL),
-								  (2, 12, now() - '14 day'::INTERVAL),
-								  (2, 13, now() - '20 day'::INTERVAL),
-								  (2, 14, now() - '20 day'::INTERVAL),
-
-								  (2, 50, now() - '1 month'::INTERVAL),
-								  (2, 79, now() - '2 month'::INTERVAL),
-								  (2, 45.96, now() - '2 month'::INTERVAL),
-								  (2, 1, now() - '4 month'::INTERVAL),
-								  (2, 99.9999999999, now() - '4 month'::INTERVAL),
-								  (2, 87.1, now() - '6 month'::INTERVAL),
-								  (2, 52.94, now() - '10 month'::INTERVAL),
-								  (2, 5.85, now() - '10 month'::INTERVAL),
-								  (2, 3.6, now() - '11 month'::INTERVAL);`)
+	db.Exec(`CREATE TABLE sensors(id serial primary key, id_sensor integer not null, value_sensor float(2)
+				 not null, time_add timestamp not null); INSERT INTO sensors(id_sensor, value_sensor,
+ 				 time_add) VALUES 
+								    (2, 3.6, now() - '11 month'::INTERVAL),
+									(2, 5.85, now() - '10 month'::INTERVAL),
+									(2, 52.94, now() - '10 month'::INTERVAL),
+									(2, 87.1, now() - '6 month'::INTERVAL),
+									(2, 99.9999999999, now() - '4 month'::INTERVAL),
+									(2, 1, now() - '4 month'::INTERVAL),
+									(2, 45.96, now() - '2 month'::INTERVAL),
+									(2, 79, now() - '2 month'::INTERVAL),
+									(2, 50, now() - '1 month'::INTERVAL),
+									(2, 14, now() - '20 day'::INTERVAL),
+									(2, 13, now() - '20 day'::INTERVAL),
+									(2, 12, now() - '14 day'::INTERVAL),
+									(2, 11.00, now() - '14 day'::INTERVAL),
+									(2, 15.67, now() - '7 day'::INTERVAL),
+									(2, 14.01, now() - '6 day'::INTERVAL),
+									(2, 30.20, now() - '4 day'::INTERVAL),
+									(2, 60.35, now() - '4 day'::INTERVAL),
+									(2, 95.56, now() - '4 day'::INTERVAL),
+									(2, 13.99, now() - '4 day'::INTERVAL),
+									(2, 11, now() - '3 day'::INTERVAL),
+									(2, 10.25, now() - '2 day'::INTERVAL),
+									(2, 10, now() - '2 day'::INTERVAL),
+									
+									(1, 5, now() - '4 day'::INTERVAL),
+									(1, 4, now() - '3 day'::INTERVAL),
+									(1, 5, now() - '3 day'::INTERVAL),
+									(1, 4, now() - '22 hour'::INTERVAL),
+									(1, 5, now() - '4 hour'::INTERVAL),
+									(1, 4, now() - '4 hour'::INTERVAL),
+									(1, 3, now() - '2 hour'::INTERVAL),
+									(1, 2, now() - '2 hour'::INTERVAL),
+									(1, 1, now());`)
 	testCode := m.Run()
 	//drop table after testing
-	db.Exec(`DROP TABLE fict_sensors_syn;`)
+	db.Exec(`DROP TABLE sensors;`)
 	os.Exit(testCode)
 }
 
@@ -82,7 +81,7 @@ func TestGetLast(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, `{"ErrorMSG":"","values":3.6}`, w.Body.String())
+	assert.Equal(t, `{"ErrorMSG":"","values":10}`, w.Body.String())
 }
 
 // TestGetWeek tests GET-day request
@@ -164,7 +163,7 @@ func TestPost(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	var sensValue Sensor
-	db.Raw(`SELECT id_sensor, value_sensor FROM fict_sensors_syn WHERE id_sensor=1 ORDER BY id DESC LIMIT 
+	db.Raw(`SELECT id_sensor, value_sensor FROM sensors WHERE id_sensor=1 ORDER BY id DESC LIMIT 
 			     1`).Scan(&sensValue)
 
 	assert.Equal(t, 200, w.Code)
@@ -280,8 +279,8 @@ func TestIsSetOk(t *testing.T) {
 
 	requests := [...]string{"/" + set + "?id=1&value=Inf", "/" + set + "?id=-1&value=23", "/" + set + "?id=&value=1",
 		"/" + set + "?id=Inf&value=1", "/" + set + "?id=1&value=", "/" + set + "?id=Inf&value=", "/" + set +
-		"?id=NaN&value=1", "/" + set + "?id=1&value=NaN", "/" + set + "?id=NaN&value=NaN", "/" + set +
-		"?id=NaN&value=NaN"}
+			"?id=NaN&value=1", "/" + set + "?id=1&value=NaN", "/" + set + "?id=NaN&value=NaN", "/" + set +
+			"?id=NaN&value=NaN"}
 
 	for _, val := range requests {
 		w := httptest.NewRecorder()
