@@ -101,7 +101,7 @@ func dbGetLast(idSens int, db *gorm.DB, ctx *gin.Context) {
 
 	defer resetObjects()
 
-	db.Where(Sensor{IDSensor: idSens}).Order("id desc").Limit(1).First(&lastValue)
+	db.Where(Sensor{IDSensor: idSens}).Limit(1).Last(&lastValue)
 
 	ctx.JSON(200, gin.H{
 		"ErrorMSG": "", "values": math.Round(lastValue.ValueSensor*100) / 100})
