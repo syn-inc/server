@@ -5,6 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/syn-inc/server)](https://goreportcard.com/report/github.com/syn-inc/server)
 [![Maintainability](https://api.codeclimate.com/v1/badges/1fd3631ebfa1173067c2/maintainability)](https://codeclimate.com/github/syn-inc/server/maintainability)
 [![codecov](https://codecov.io/gh/syn-inc/server/branch/master/graph/badge.svg)](https://codecov.io/gh/syn-inc/server)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/3245/badge)](https://bestpractices.coreinfrastructure.org/projects/3245)
 
 
 
